@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preparando el viaje con la osita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
+<style>
+  :root{
+    --paper: #F3ECDA;
+    --paper-2: #EAE1C7;
+    --ink: #2B2620;
+    --ink-soft: #5B5346;
+    --petrol: #1F4B47;
+    --petrol-2: #163533;
+    --honey: #C9922E;
+    --honey-2: #E4B25C;
+    --rose: #C97B7B;
+    --line: rgba(43,38,32,0.18);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(43,38,32,0.07) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    position: relative;
+    padding: 56px 24px 40px;
+    text-align: center;
+    overflow: hidden;
+    border-bottom: 2px solid var(--ink);
+  }
+  header .eyebrow{
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--petrol);
+    margin-bottom: 14px;
+  }
+  header h1{
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: clamp(32px, 6vw, 64px);
+    line-height: 1.05;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+  header h1 .accent{
+    font-style: italic;
+    color: var(--honey);
+    position: relative;
+  }
+  header p.sub{
+    max-width: 560px;
+    margin: 0 auto;
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .route-doodle{
+    position: absolute;
+    top: 18px; left: 0; right: 0;
+    height: 60px;
+    pointer-events: none;
+    opacity: 0.55;
+  }
+  .stats-row{
+    display:flex;
+    justify-content:center;
+    gap: 28px;
+    margin-top: 26px;
+    flex-wrap: wrap;
+  }
+  .stat{
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    border: 1px dashed var(--line);
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.35);
+  }
+  .stat b{ color: var(--petrol); font-size: 13px; }
+
+  /* ---------- Controls ---------- */
+  .controls{
+    max-width: 1200px;
+    margin: 28px auto 0;
+    padding: 0 24px;
+    display:flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items:center;
+    justify-content: space-between;
+  }
+  .search-wrap{
+    position: relative;
+    flex: 1 1 260px;
+    max-width: 380px;
+  }
+  #search{
+    width: 100%;
+    padding: 12px 16px;
+    font-family: 'Work Sans', sans-serif;
+    font-size: 14px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+  }
+  #search:focus{ border-color: var(--petrol); }
+  .legend{
+    display:flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    font-family:'Space Mono', monospace;
+    color: var(--ink-soft);
+  }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; border: 1.5px solid rgba(0,0,0,0.25);}
+  .dot.europa{ background:#1F4B47; }
+  .dot.america{ background:#C9922E; }
+  .dot.africa{ background:#C97B7B; }
+  .dot.asia{ background:#7A5C8E; }
+
+  /* ---------- Map ---------- */
+  #map-wrap{
+    max-width: 1200px;
+    margin: 18px auto 40px;
+    padding: 0 24px;
+  }
+  #map{
+    width: 100%;
+    height: 72vh;
+    min-height: 460px;
+    border: 3px solid var(--ink);
+    border-radius: 14px;
+    background: #DCE7E6;
+    box-shadow: 0 10px 0 -2px rgba(43,38,32,0.08);
+  }
+
+  .leaflet-popup-content-wrapper{
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    box-shadow: none;
+  }
+  .leaflet-popup-tip{ background: var(--paper); border: 2px solid var(--ink); }
+  .leaflet-popup-content{ margin: 10px 12px; font-family:'Work Sans',sans-serif; }
+  .popup-code{ font-family:'Space Mono',monospace; font-weight:700; color: var(--petrol); }
+  .popup-city{ font-family:'Fraunces', serif; font-weight:600; font-size: 16px; margin: 2px 0; }
+  .popup-hint{ font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- Side panel (passport stamp / boarding pass) ---------- */
+  #overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(31,75,71,0.25);
+    backdrop-filter: blur(1px);
+    display:none;
+    z-index: 999;
+  }
+  #panel{
+    position: fixed;
+    top: 0; right: -420px;
+    width: 100%;
+    max-width: 420px;
+    height: 100%;
+    background: var(--paper);
+    border-left: 3px solid var(--ink);
+    z-index: 1000;
+    transition: right 0.35s cubic-bezier(.2,.8,.2,1);
+    overflow-y: auto;
+    padding: 0;
+  }
+  #panel.open{ right: 0; }
+  .panel-close{
+    position: absolute;
+    top: 18px; right: 18px;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    font-size: 16px;
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-family: 'Space Mono', monospace;
+  }
+  .boarding-pass{
+    margin: 26px 22px 0;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .bp-top{
+    background: var(--petrol);
+    color: var(--paper);
+    padding: 16px 20px;
+    display:flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family:'Space Mono', monospace;
+  }
+  .bp-top .from-to{ font-size: 20px; font-weight:700; letter-spacing: 0.05em; }
+  .bp-top .flight-label{ font-size: 10px; opacity: 0.75; letter-spacing:0.15em; text-transform:uppercase;}
+  .bp-body{
+    padding: 20px 20px 6px;
+  }
+  .bp-city{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 2px;
+    color: var(--ink);
+  }
+  .bp-country{
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+  .bp-dashed{
+    border-top: 2px dashed var(--line);
+    margin: 14px 0;
+    position: relative;
+  }
+  .bp-dashed:before, .bp-dashed:after{
+    content:'';
+    position: absolute;
+    top: -9px;
+    width: 18px; height: 18px;
+    background: var(--paper);
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+  }
+  .bp-dashed:before{ left: -32px; }
+  .bp-dashed:after{ right: -32px; }
+  .bp-meta{
+    display:flex;
+    justify-content: space-between;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .bp-meta div b{ display:block; font-size: 14px; color: var(--ink); font-family:'Work Sans',sans-serif; letter-spacing:0; text-transform:none; }
+
+  .plan-title{
+    margin: 26px 22px 10px;
+    font-family:'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--honey);
+  }
+  .plan-text{
+    margin: 0 22px 30px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+  .stamp{
+    position: absolute;
+    top: 14px; right: -34px;
+    transform: rotate(14deg);
+    width: 88px; height: 88px;
+    border: 3px solid var(--rose);
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color: var(--rose);
+    font-family:'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    pointer-events:none;
+  }
+
+  footer{
+    text-align:center;
+    padding: 30px 20px 50px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  footer .heart{ color: var(--rose); }
+
+  @media (max-width: 640px){
+    #panel{ max-width: 100%; }
+    .stamp{ display:none; }
+    .bp-dashed:before, .bp-dashed:after{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="route-doodle" viewBox="0 0 1000 60" preserveAspectRatio="none">
+    <path d="M0,40 C200,10 350,55 500,25 C650,-5 800,45 1000,15" fill="none" stroke="#1F4B47" stroke-width="2" stroke-dasharray="6 8"/>
+  </svg>
+  <div class="eyebrow">Iberia &middot; Ruta compartida</div>
+  <h1>Preparando el viaje<br>con la <span class="accent">osita</span></h1>
+  <p class="sub">Todos los destinos a los que vuela Iberia, en un solo mapa. Tocad cualquier ciudad y aparecerá un plan de 3&ndash;4 días para cuando decidamos ir juntos.</p>
+  <div class="stats-row">
+    <div class="stat"><b id="stat-count">0</b> destinos</div>
+    <div class="stat">Origen &middot; <b>Madrid (MAD)</b></div>
+    <div class="stat">Un mapa, muchas escapadas</div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <input id="search" type="text" placeholder="Busca una ciudad o país…" autocomplete="off">
+  </div>
+  <div class="legend">
+    <span><i class="dot europa"></i>Europa</span>
+    <span><i class="dot america"></i>América</span>
+    <span><i class="dot africa"></i>África</span>
+    <span><i class="dot asia"></i>Asia</span>
+  </div>
+</div>
+
+<div id="map-wrap">
+  <div id="map"></div>
+</div>
+
+<footer>
+  Hecho con <span class="heart">&#9825;</span> pensando en el próximo viaje juntos.
+</footer>
+
+<div id="overlay"></div>
+<div id="panel">
+  <button class="panel-close" id="panel-close">&times;</button>
+  <div class="boarding-pass" id="boarding-pass">
+    <div class="stamp" id="stamp">Próximo<br>destino</div>
+    <div class="bp-top">
+      <div>
+        <div class="flight-label">Desde</div>
+        <div class="from-to">MAD</div>
+      </div>
+      <div style="font-size:22px;">&#9992;</div>
+      <div>
+        <div class="flight-label">Hasta</div>
+        <div class="from-to" id="bp-code">---</div>
+      </div>
+    </div>
+    <div class="bp-body">
+      <p class="bp-city" id="bp-city">Ciudad</p>
+      <p class="bp-country" id="bp-country">País</p>
+      <div class="bp-meta">
+        <div>Duración sugerida<br><b>3&ndash;4 días</b></div>
+        <div>Continente<br><b id="bp-continent">&mdash;</b></div>
+      </div>
+      <div class="bp-dashed"></div>
+    </div>
+  </div>
+  <p class="plan-title">Qué ver y hacer</p>
+  <p class="plan-text" id="bp-blurb">Selecciona un destino en el mapa.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+<script>
+const DESTINATIONS = [{"code": "AGP", "city": "Málaga", "country": "España", "continent": "europa", "lat": 36.6749, "lon": -4.4991, "blurb": "Empezad paseando por el centro histórico y subiendo a la Alcazaba y el Castillo de Gibralfaro al atardecer. Dedicad una mañana al Museo Picasso y al Mercado de Atarazanas, y reservad un día para Marbella o el Caminito del Rey. Cerrad el viaje con espeto de sardinas en un chiringuito de la Malagueta."}, {"code": "AMS", "city": "Ámsterdam", "country": "Países Bajos", "continent": "europa", "lat": 52.3105, "lon": 4.7683, "blurb": "Recorred los canales en barco al llegar y perded el resto del día en el Jordaan. Dedicad una jornada entera al Rijksmuseum y a la Casa de Ana Frank (reservad con antelación), otra a alquilar bicicletas hasta los molinos de Zaanse Schans, y guardad una tarde para el barrio florido de los canales al anochecer."}, {"code": "ARN", "city": "Estocolmo", "country": "Suecia", "continent": "europa", "lat": 59.6519, "lon": 17.9186, "blurb": "Perdeos por las callejuelas medievales de Gamla Stan el primer día. Visitad el museo Vasa y el ayuntamiento (donde se celebra la cena del Nobel), y reservad una tarde para Södermalm, con sus miradores sobre el archipiélago. Un paseo en barco entre islas es el broche perfecto."}, {"code": "ATH", "city": "Atenas", "country": "Grecia", "continent": "europa", "lat": 37.9364, "lon": 23.9445, "blurb": "El primer día es para la Acrópolis y el Partenón al amanecer, antes del calor. Bajad después al barrio de Plaka a comer y perded una tarde en el Museo de la Acrópolis. Reservad un día para Cabo Sunion y su templo de Poseidón frente al mar Egeo."}, {"code": "BCN", "city": "Barcelona", "country": "España", "continent": "europa", "lat": 41.2974, "lon": 2.0833, "blurb": "La Sagrada Familia y el Park Güell son parada obligada el primer día. Perdeos por el Barrio Gótico y el Born, y dedicad una tarde a la Barceloneta para bañaros y cenar pescado. Subid al Bunker del Carmel al atardecer para las mejores vistas de la ciudad."}, {"code": "BER", "city": "Berlín", "country": "Alemania", "continent": "europa", "lat": 52.3667, "lon": 13.5033, "blurb": "Empezad en la Puerta de Brandeburgo y el Reichstag, y seguid la línea del antiguo Muro hasta la East Side Gallery. Dedicad una mañana a la Isla de los Museos y una tarde al barrio alternativo de Kreuzberg. Terminad con una cena tranquila junto al río Spree."}, {"code": "BIO", "city": "Bilbao", "country": "España", "continent": "europa", "lat": 43.3011, "lon": -2.9106, "blurb": "El Museo Guggenheim y su araña de Louise Bourgeois son la gran cita del primer día. Recorred el Casco Viejo de pintxo en pintxo y cruzad el Puente Colgante de Portugalete. Reservad una jornada para San Juan de Gaztelugatxe y la costa vasca."}, {"code": "BOG", "city": "Bogotá", "country": "Colombia", "continent": "america", "lat": 4.7016, "lon": -74.1469, "blurb": "Explorad el barrio colonial de La Candelaria y el Museo del Oro el primer día. Subid en teleférico al Monserrate para ver la ciudad entera a vuestros pies, y dedicad una tarde al animado barrio de Usaquén. Una excursión a la Catedral de Sal de Zipaquirá completa el plan."}, {"code": "BOS", "city": "Boston", "country": "EE. UU.", "continent": "america", "lat": 42.3656, "lon": -71.0096, "blurb": "Seguid el Freedom Trail pintado en el suelo entre los lugares clave de la independencia. Pasead por Beacon Hill y el campus de Harvard en Cambridge, y reservad una tarde para el mercado de Quincy Market junto al puerto. Una cena de marisco en el North End es imprescindible."}, {"code": "BRI", "city": "Bari", "country": "Italia", "continent": "europa", "lat": 41.1389, "lon": 16.7606, "blurb": "El casco antiguo de Bari Vecchia, con sus calles blancas y la Basílica de San Nicolás, ocupa bien el primer día. Reservad una jornada para Alberobello y sus trulli, y otra para Polignano a Mare, con sus casas colgadas sobre el mar Adriático."}, {"code": "BRU", "city": "Bruselas", "country": "Bélgica", "continent": "europa", "lat": 50.901, "lon": 4.4844, "blurb": "La Grand Place, con sus gremios dorados, es la primera parada obligada. Probad gofres y cerveza artesanal por el barrio de Sablon, visitad el Atomium, y reservad medio día para una escapada a Brujas, a poco más de una hora en tren."}, {"code": "BUD", "city": "Budapest", "country": "Hungría", "continent": "europa", "lat": 47.4298, "lon": 19.2611, "blurb": "Cruzad el Puente de las Cadenas entre Buda y Pest y subid al Bastión de los Pescadores para ver el Parlamento iluminado. Dedicad una tarde a los baños termales Széchenyi, y reservad una noche para un crucero por el Danubio al atardecer."}, {"code": "CAG", "city": "Cagliari", "country": "Cerdeña, Italia", "continent": "europa", "lat": 39.2515, "lon": 9.0543, "blurb": "El barrio histórico de Castello, con sus murallas y vistas al golfo, es la mejor manera de empezar. Bajad a las playas del Poetto para el segundo día, y reservad una jornada para explorar la costa sur de Cerdeña en coche, con calas de aguas turquesa."}, {"code": "CCS", "city": "Caracas", "country": "Venezuela", "continent": "america", "lat": 10.6031, "lon": -66.9906, "blurb": "Visitad el centro histórico y la Plaza Bolívar, y subid en teleférico al Ávila para ver la ciudad entre montaña y mar. Reservad tiempo para probar arepas y cachapas en algún local del este de la ciudad antes de planear una excursión a la costa cercana."}, {"code": "CDG", "city": "París", "country": "Francia", "continent": "europa", "lat": 49.0097, "lon": 2.5479, "blurb": "La Torre Eiffel y un paseo en barco por el Sena son la postal inicial. Dedicad una jornada al Louvre y Montmartre, y otra al barrio de Le Marais y la Isla de la Cité. Guardad una tarde para Versalles si os apetece una escapada de palacio."}, {"code": "CFU", "city": "Corfú", "country": "Grecia", "continent": "europa", "lat": 39.6019, "lon": 19.9117, "blurb": "La ciudad vieja de Corfú, de influencia veneciana, y su fortaleza son el primer plan. Bajad a las playas de Paleokastritsa, con sus calas escondidas, y reservad una jornada para recorrer el interior verde de la isla en coche, parando en pueblos de montaña."}, {"code": "CPH", "city": "Copenhague", "country": "Dinamarca", "continent": "europa", "lat": 55.618, "lon": 12.656, "blurb": "Nyhavn, con sus casas de colores junto al canal, es el punto de partida ideal. Visitad el Palacio de Christiansborg y los jardines de Tivoli, y reservad una tarde para el barrio alternativo de Christiania. Alquilar bicicletas es la mejor forma de moveros."}, {"code": "CTA", "city": "Catania", "country": "Sicilia, Italia", "continent": "europa", "lat": 37.4668, "lon": 15.0664, "blurb": "El casco barroco de Catania, construido con piedra volcánica del Etna, ocupa bien el primer día. Subid al volcán Etna en una excursión de medio día, y reservad una jornada para Taormina y su teatro griego con vistas al mar."}, {"code": "DBV", "city": "Dubrovnik", "country": "Croacia", "continent": "europa", "lat": 42.5614, "lon": 18.2683, "blurb": "Recorred las murallas de la ciudad vieja con vistas al Adriático el primer día. Bajad al puerto y perdeos por las callejuelas de piedra, y reservad un día para una excursión en barco a las Islas Elafiti. El teleférico al monte Srđ es perfecto al atardecer."}, {"code": "DFW", "city": "Dallas", "country": "EE. UU.", "continent": "america", "lat": 32.8998, "lon": -97.0403, "blurb": "Dedicad una mañana al distrito histórico de Dealey Plaza y al Sixth Floor Museum. Visitad el barrio artístico del Bishop Arts District y el Perot Museum, y reservad una noche para la escena de barbacoa tejana y música en vivo del centro."}, {"code": "DOH", "city": "Doha", "country": "Catar", "continent": "asia", "lat": 25.2731, "lon": 51.6081, "blurb": "El Museo de Arte Islámico y el paseo marítimo de la Corniche son la mejor introducción a la ciudad. Perdeos por el zoco Souq Waqif de noche, y reservad una jornada para una excursión al desierto y las dunas de Khor Al Adaid."}, {"code": "DSS", "city": "Dakar", "country": "Senegal", "continent": "africa", "lat": 14.6708, "lon": -17.4677, "blurb": "Visitad la Isla de Gorée y su memoria histórica en barco desde el puerto. Recorred los mercados de Sandaga y el Monumento del Renacimiento Africano, y reservad tiempo en las playas cercanas para descansar entre tanta cultura."}, {"code": "DUB", "city": "Dublín", "country": "Irlanda", "continent": "europa", "lat": 53.4264, "lon": -6.2499, "blurb": "El Trinity College y su Libro de Kells son parada obligada, junto con la fábrica Guinness Storehouse. Perdeos por el barrio de Temple Bar de noche, y reservad un día para la costa de Howth o los acantilados de Moher, algo más lejos."}, {"code": "DUS", "city": "Düsseldorf", "country": "Alemania", "continent": "europa", "lat": 51.2895, "lon": 6.7668, "blurb": "La Altstadt junto al Rin, conocida como la barra más larga del mundo por sus cervecerías, es el mejor plan del primer día. Visitad la torre Rheinturm y el barrio de moda Kö-Bogen, y reservad una escapada a Colonia, a menos de una hora en tren."}, {"code": "EAS", "city": "San Sebastián", "country": "España", "continent": "europa", "lat": 43.3567, "lon": -1.7906, "blurb": "Pasead por la Bahía de la Concha y subid al Monte Igueldo para ver la ciudad entera. Id de pintxos por la Parte Vieja, y reservad una jornada para la costa cercana, con parada en Getaria o Zarautz."}, {"code": "EDI", "city": "Edimburgo", "country": "Escocia", "continent": "europa", "lat": 55.95, "lon": -3.3725, "blurb": "El Castillo de Edimburgo y la Royal Mile marcan el primer día. Subid a Arthur's Seat para las vistas de la ciudad, y perdeos por los callejones de Old Town de noche. Reservad una jornada para una excursión a las Tierras Altas cercanas."}, {"code": "EWR", "city": "Nueva York", "country": "EE. UU.", "continent": "america", "lat": 40.6895, "lon": -74.1745, "blurb": "Central Park, Times Square y el Empire State Building llenan bien el primer día. Cruzad a la Estatua de la Libertad y Ellis Island, y dedicad una tarde al High Line y al Meatpacking District. Guardad una noche para un musical de Broadway."}, {"code": "EZE", "city": "Buenos Aires", "country": "Argentina", "continent": "america", "lat": 34.8222, "lon": -58.5358, "blurb": "Recorred el barrio de San Telmo y su mercado de antigüedades, y bajad a La Boca para ver el colorido Caminito. Dedicad una noche a un espectáculo de tango en Puerto Madero, y reservad tiempo para el Cementerio de la Recoleta y una buena parrilla."}, {"code": "FAO", "city": "Faro", "country": "Portugal", "continent": "europa", "lat": 37.0144, "lon": -7.9659, "blurb": "El casco antiguo amurallado de Faro es un paseo tranquilo para empezar. Reservad un día para las playas de la Ria Formosa en barco, y otro para recorrer pueblos del Algarve como Tavira o Lagos, con sus acantilados y calas escondidas."}, {"code": "FCO", "city": "Roma", "country": "Italia", "continent": "europa", "lat": 41.8003, "lon": 12.2389, "blurb": "El Coliseo y el Foro Romano son el plan del primer día. Dedicad una jornada al Vaticano y la Capilla Sixtina, y otra a lanzar una moneda en la Fontana di Trevi y perderos por Trastevere de noche. La comida italiana lo acompaña todo."}, {"code": "FLR", "city": "Florencia", "country": "Italia", "continent": "europa", "lat": 43.81, "lon": 11.2051, "blurb": "La Galería de la Academia, con el David de Miguel Ángel, y la Catedral de Santa Maria del Fiore marcan el inicio. Cruzad el Ponte Vecchio y subid al Piazzale Michelangelo al atardecer, y reservad un día para la Toscana y sus viñedos en la Chianti."}, {"code": "FNC", "city": "Funchal", "country": "Madeira, Portugal", "continent": "europa", "lat": 32.6979, "lon": -16.7745, "blurb": "Subid en teleférico al Monte y bajad en los tradicionales trineos de mimbre. Recorred el paseo marítimo y el Mercado dos Lavradores, y reservad una jornada para las levadas de Madeira, senderos junto a canales de agua entre paisajes verdes."}, {"code": "FOR", "city": "Fortaleza", "country": "Brasil", "continent": "america", "lat": -3.7763, "lon": -38.5326, "blurb": "Disfrutad de las playas urbanas del Meireles y su paseo marítimo el primer día. Reservad una jornada para las dunas y lagunas de Jericoacoara o Cumbuco, ideales para el kitesurf, y dejad tiempo para probar la cocina cearense junto al mar."}, {"code": "GIG", "city": "Río de Janeiro", "country": "Brasil", "continent": "america", "lat": -22.809, "lon": -43.2506, "blurb": "El Cristo Redentor y el Pan de Azúcar son las dos citas imprescindibles de los primeros días. Bajad a las playas de Copacabana e Ipanema, y perdeos por el barrio bohemio de Santa Teresa. Reservad una noche para sentir una escuela de samba."}, {"code": "GRU", "city": "São Paulo", "country": "Brasil", "continent": "america", "lat": -23.4356, "lon": -46.4731, "blurb": "Recorred la Avenida Paulista y el barrio bohemio de Vila Madalena, lleno de arte urbano. Dedicad una jornada al mercado municipal y al centro histórico, y reservad una noche para la escena gastronómica, una de las más ricas de Sudamérica."}, {"code": "GUA", "city": "Ciudad de Guatemala", "country": "Guatemala", "continent": "america", "lat": 14.5833, "lon": -90.5275, "blurb": "Visitad el centro histórico y la Plaza de la Constitución el primer día. Reservad una jornada para Antigua Guatemala, con sus volcanes y calles coloniales, y otra para el lago Atitlán, uno de los paisajes más bonitos de Centroamérica."}, {"code": "GVA", "city": "Ginebra", "country": "Suiza", "continent": "europa", "lat": 46.2381, "lon": 6.1089, "blurb": "Pasead junto al lago Leman y su gran chorro de agua, el Jet d'Eau. Visitad la ciudad vieja y la Catedral de San Pedro, y reservad una jornada para una excursión a los Alpes cercanos o al pueblo de Annecy, al otro lado de la frontera francesa."}, {"code": "GYE", "city": "Guayaquil", "country": "Ecuador", "continent": "america", "lat": -2.1575, "lon": -79.8836, "blurb": "El Malecón 2000 junto al río Guayas y el barrio de Las Peñas, con sus casas de colores, marcan el primer día. Reservad una jornada para las Islas Galápagos si el viaje lo permite, uno de los destinos naturales más únicos del planeta."}, {"code": "HAM", "city": "Hamburgo", "country": "Alemania", "continent": "europa", "lat": 53.6304, "lon": 9.9882, "blurb": "El puerto y el barrio de almacenes Speicherstadt, Patrimonio de la Humanidad, son el mejor inicio. Visitad la Elbphilharmonie y su mirador, y reservad una noche para el ambiente del barrio de St. Pauli y la Reeperbahn."}, {"code": "HEL", "city": "Helsinki", "country": "Finlandia", "continent": "europa", "lat": 60.3172, "lon": 24.9633, "blurb": "La Catedral blanca y la plaza del mercado junto al puerto marcan el primer día. Visitad la fortaleza marítima de Suomenlinna en barco, y reservad una tarde para probar una sauna finlandesa auténtica, toda una experiencia local."}, {"code": "IAD", "city": "Washington D.C.", "country": "EE. UU.", "continent": "america", "lat": 38.9531, "lon": -77.4565, "blurb": "El National Mall, con el Capitolio, el Monumento a Lincoln y los museos Smithsonian gratuitos, ocupa bien dos días. Visitad la Casa Blanca desde fuera y el cementerio de Arlington, y reservad una tarde para el barrio de Georgetown junto al río Potomac."}, {"code": "JFK", "city": "Nueva York", "country": "EE. UU.", "continent": "america", "lat": 40.6413, "lon": -73.7781, "blurb": "Central Park, Times Square y el Empire State Building llenan bien el primer día. Cruzad a la Estatua de la Libertad y Ellis Island, y dedicad una tarde al High Line y al Meatpacking District. Guardad una noche para un musical de Broadway."}, {"code": "JMK", "city": "Míkonos", "country": "Grecia", "continent": "europa", "lat": 37.4351, "lon": 25.3481, "blurb": "Perdeos por las callejuelas blancas de Mykonos Town y sus famosos molinos de viento al atardecer. Reservad días de playa en Paraga o Psarou, y dejad una noche para la animada vida nocturna de la isla."}, {"code": "JTR", "city": "Santorini", "country": "Grecia", "continent": "europa", "lat": 36.3992, "lon": 25.4793, "blurb": "Ved la puesta de sol desde Oia, la imagen más icónica de Grecia, el primer día. Recorred el pueblo de Fira por sus calles con vistas al volcán, y reservad una jornada para un crucero por la caldera con parada en aguas termales."}, {"code": "KLU", "city": "Klagenfurt", "country": "Austria", "continent": "europa", "lat": 46.6425, "lon": 14.3377, "blurb": "Pasead junto al lago Wörthersee, con sus aguas templadas por el sol alpino. Visitad el casco histórico de Klagenfurt y su famosa fuente del dragón, y reservad una jornada para una excursión a los Alpes de Carintia cercanos."}, {"code": "LAX", "city": "Los Ángeles", "country": "EE. UU.", "continent": "america", "lat": 33.9416, "lon": -118.4085, "blurb": "Recorred Hollywood y su Paseo de la Fama, y bajad hasta Santa Mónica para ver el atardecer en su muelle. Dedicad una jornada a Beverly Hills y Rodeo Drive, y otra a Malibú o Venice Beach, con su ambiente relajado junto al mar."}, {"code": "LCG", "city": "A Coruña", "country": "España", "continent": "europa", "lat": 43.3021, "lon": -8.3773, "blurb": "Pasead por el paseo marítimo más largo de Europa hasta la Torre de Hércules, el faro romano más antiguo en uso. Recorred la Ciudad Vieja y la Plaza de María Pita, y reservad una jornada para las Rías Altas cercanas."}, {"code": "LGW", "city": "Londres", "country": "Reino Unido", "continent": "europa", "lat": 51.1537, "lon": -0.1821, "blurb": "El Big Ben, el Palacio de Westminster y el London Eye marcan el primer día. Visitad el Museo Británico y perdeos por Camden Market, y reservad una tarde para la Torre de Londres y un paseo por el Támesis al atardecer."}, {"code": "LHR", "city": "Londres", "country": "Reino Unido", "continent": "europa", "lat": 51.47, "lon": -0.4543, "blurb": "El Big Ben, el Palacio de Westminster y el London Eye marcan el primer día. Visitad el Museo Británico y perdeos por Camden Market, y reservad una tarde para la Torre de Londres y un paseo por el Támesis al atardecer."}, {"code": "LIM", "city": "Lima", "country": "Perú", "continent": "america", "lat": -12.0219, "lon": -77.1143, "blurb": "El centro histórico colonial y el barrio bohemio de Barranco, con su Puente de los Suspiros, marcan bien el inicio. Dedicad una noche a la gastronomía limeña, de las mejores del mundo, y reservad días para Cuzco y Machu Picchu si el viaje continúa."}, {"code": "LIN", "city": "Milán", "country": "Italia", "continent": "europa", "lat": 45.4451, "lon": 9.2767, "blurb": "El Duomo y su terraza con vistas son la primera parada, junto a la Galería Vittorio Emanuele II. Visitad el mural de La Última Cena de Leonardo, y reservad una tarde para el barrio de moda Brera y sus calles con encanto."}, {"code": "LIS", "city": "Lisboa", "country": "Portugal", "continent": "europa", "lat": 38.7813, "lon": -9.1359, "blurb": "Subid en el tranvía 28 por las cuestas de Alfama y visitad el Castillo de San Jorge. Dedicad un día a Belém, con su torre y sus famosos pastéis, y otro a una escapada a Sintra, con sus palacios de cuento entre montañas."}, {"code": "LJU", "city": "Liubliana", "country": "Eslovenia", "continent": "europa", "lat": 46.2237, "lon": 14.4576, "blurb": "El casco histórico junto al río Ljubljanica y su castillo en lo alto marcan el primer día. Reservad una jornada para el lago Bled, con su isla y su iglesia, uno de los paisajes más fotografiados de Europa central."}, {"code": "MAD", "city": "Madrid", "country": "España", "continent": "europa", "lat": 40.4936, "lon": -3.5668, "blurb": "El Museo del Prado y el Parque del Retiro son parada obligada. Perdeos por el Barrio de las Letras y La Latina de tapeo, y reservad una tarde para el Palacio Real y la Plaza Mayor. Como en casa, pero para redescubrirla juntos."}, {"code": "MAN", "city": "Manchester", "country": "Reino Unido", "continent": "europa", "lat": 53.3588, "lon": -2.2727, "blurb": "Visitad el Museo de la Ciencia y la Industria y el barrio histórico de Ancoats. Dedicad una tarde al Northern Quarter, con su ambiente creativo, y reservad tiempo para conocer la historia futbolística de la ciudad en alguno de sus estadios."}, {"code": "MCO", "city": "Orlando", "country": "EE. UU.", "continent": "america", "lat": 28.4312, "lon": -81.3081, "blurb": "Los parques temáticos, con Walt Disney World y Universal Studios, marcan el ritmo del viaje. Repartid los días entre atracciones y descanso junto a la piscina, y reservad una tarde para los outlets si os gusta ir de compras."}, {"code": "MEX", "city": "Ciudad de México", "country": "México", "continent": "america", "lat": 19.4363, "lon": -99.0721, "blurb": "El Zócalo, el Palacio de Bellas Artes y el barrio de Coyoacán, con la Casa Azul de Frida Kahlo, marcan el inicio. Reservad una jornada para las pirámides de Teotihuacán, y otra para el ambiente de Xochimilco en trajinera."}, {"code": "MIA", "city": "Miami", "country": "EE. UU.", "continent": "america", "lat": 25.7959, "lon": -80.287, "blurb": "South Beach y la arquitectura Art Decó de Ocean Drive son la primera parada. Recorred el barrio cubano de Little Havana y su ambiente latino, y reservad una tarde en Wynwood, lleno de arte urbano y galerías."}, {"code": "MTY", "city": "Monterrey", "country": "México", "continent": "america", "lat": 25.7785, "lon": -100.1069, "blurb": "El Cerro de la Silla y el Parque Fundidora, con su arquitectura industrial reconvertida, marcan el primer día. Reservad una jornada para el Parque Nacional Cumbres, con sus cascadas y grutas, ideal para escapar del calor de la ciudad."}, {"code": "MVD", "city": "Montevideo", "country": "Uruguay", "continent": "america", "lat": -34.8384, "lon": -56.0308, "blurb": "La Ciudad Vieja y el mercado del Puerto, con sus parrillas, son el mejor plan inicial. Pasead por la Rambla junto al Río de la Plata, y reservad una jornada para Colonia del Sacramento o las playas de Punta del Este cercanas."}, {"code": "MXP", "city": "Milán", "country": "Italia", "continent": "europa", "lat": 45.6306, "lon": 8.7281, "blurb": "El Duomo y su terraza con vistas son la primera parada, junto a la Galería Vittorio Emanuele II. Visitad el mural de La Última Cena de Leonardo, y reservad una tarde para el barrio de moda Brera y sus calles con encanto."}, {"code": "NAP", "city": "Nápoles", "country": "Italia", "continent": "europa", "lat": 40.886, "lon": 14.2908, "blurb": "El centro histórico napolitano y su primera pizza margherita auténtica marcan bien el inicio. Reservad un día para Pompeya, a los pies del Vesubio, y otro para la costa de Amalfi o la isla de Capri, imprescindibles cerca de la ciudad."}, {"code": "NRT", "city": "Tokio", "country": "Japón", "continent": "asia", "lat": 35.772, "lon": 140.3929, "blurb": "El cruce de Shibuya y el templo Senso-ji en Asakusa marcan el primer día. Dedicad una jornada al barrio de Harajuku y a los jardines del Palacio Imperial, y reservad una escapada de un día al Monte Fuji, visible en días claros."}, {"code": "OLB", "city": "Olbia", "country": "Cerdeña, Italia", "continent": "europa", "lat": 40.8987, "lon": 9.5176, "blurb": "El casco antiguo de Olbia es un buen punto de partida hacia la Costa Esmeralda. Reservad varios días de playa en Porto Cervo o la Maddalena, con aguas de un turquesa casi caribeño, y dejad tiempo para una excursión en barco entre calas."}, {"code": "OPO", "city": "Oporto", "country": "Portugal", "continent": "europa", "lat": 41.2481, "lon": -8.6814, "blurb": "El barrio de Ribeira junto al Duero y sus puentes marcan el primer día. Visitad una bodega de vino de Oporto en Vila Nova de Gaia, y reservad una jornada para el valle del Duero, con sus terrazas de viñedos sobre el río."}, {"code": "ORD", "city": "Chicago", "country": "EE. UU.", "continent": "america", "lat": 41.9742, "lon": -87.9073, "blurb": "Un crucero arquitectónico por el río Chicago es la mejor introducción a sus rascacielos. Visitad Millennium Park y su escultura The Bean, y reservad una tarde para el Instituto de Arte y una buena pizza al estilo deep dish."}, {"code": "ORY", "city": "París", "country": "Francia", "continent": "europa", "lat": 48.7233, "lon": 2.3794, "blurb": "La Torre Eiffel y un paseo en barco por el Sena son la postal inicial. Dedicad una jornada al Louvre y Montmartre, y otra al barrio de Le Marais y la Isla de la Cité. Guardad una tarde para Versalles si os apetece una escapada de palacio."}, {"code": "OSL", "city": "Oslo", "country": "Noruega", "continent": "europa", "lat": 60.1976, "lon": 11.1004, "blurb": "El Parque Vigeland y sus esculturas, junto al Museo Vikingo, marcan bien el inicio. Pasead por el puerto de Aker Brygge, y reservad una jornada para los fiordos cercanos, con un crucero por el Oslofjord."}, {"code": "OTP", "city": "Bucarest", "country": "Rumanía", "continent": "europa", "lat": 44.5711, "lon": 26.085, "blurb": "El Palacio del Parlamento y el casco antiguo, con su animada vida de cafés, son la primera parada. Reservad una jornada para el Castillo de Bran, ligado a la leyenda de Drácula, en la región de Transilvania."}, {"code": "OVD", "city": "Asturias", "country": "España", "continent": "europa", "lat": 43.5635, "lon": -6.0346, "blurb": "Oviedo y su casco histórico prerrománico marcan bien el inicio. Reservad una jornada para los Lagos de Covadonga y otra para la costa asturiana, con pueblos como Cudillero o Llanes y su marisco fresco."}, {"code": "PDL", "city": "Ponta Delgada", "country": "Azores, Portugal", "continent": "europa", "lat": 37.7412, "lon": -25.698, "blurb": "El casco histórico de Ponta Delgada, en la isla de São Miguel, es un buen inicio tranquilo. Reservad un día para las lagunas volcánicas de Sete Cidades y otro para las aguas termales de Furnas, entre paisajes verdes únicos."}, {"code": "PMO", "city": "Palermo", "country": "Sicilia, Italia", "continent": "europa", "lat": 38.176, "lon": 13.1019, "blurb": "El Mercado de Ballarò y la Catedral de Palermo marcan bien el primer día. Visitad la Capilla Palatina, y reservad una jornada para Cefalù o Monreale, con sus mosaicos bizantinos, muy cerca de la ciudad."}, {"code": "PRG", "city": "Praga", "country": "Chequia", "continent": "europa", "lat": 50.1008, "lon": 14.26, "blurb": "El Puente de Carlos y el Castillo de Praga marcan el primer día. Perdeos por la Plaza de la Ciudad Vieja y su reloj astronómico, y reservad una tarde para el barrio judío y una cerveza checa en algún local histórico."}, {"code": "PTY", "city": "Ciudad de Panamá", "country": "Panamá", "continent": "america", "lat": 9.0714, "lon": -79.3835, "blurb": "El Casco Antiguo y el moderno skyline junto a la bahía marcan bien el inicio. Visitad el Canal de Panamá y sus esclusas, y reservad una jornada para el archipiélago de San Blas, con sus islas de arena blanca."}, {"code": "QSR", "city": "Salerno / Costa Amalfitana", "country": "Italia", "continent": "europa", "lat": 40.6203, "lon": 14.9206, "blurb": "Desde Salerno tenéis la puerta de entrada a la Costa Amalfitana. Recorred Amalfi y Positano en barco o en bus por la carretera de acantilados, y reservad una jornada para Ravello, con sus jardines colgados sobre el mar."}, {"code": "RAK", "city": "Marrakech", "country": "Marruecos", "continent": "africa", "lat": 31.6069, "lon": -8.0363, "blurb": "Perdeos por los zocos de la medina y la plaza Jemaa el-Fna al atardecer, con sus puestos y músicos. Visitad los Jardines Majorelle y un hammam tradicional, y reservad una jornada para una excursión al desierto de Agafay o las montañas del Atlas."}, {"code": "REC", "city": "Recife", "country": "Brasil", "continent": "america", "lat": -8.1264, "lon": -34.9236, "blurb": "El barrio colonial de Recife Antigo y el cercano Olinda, Patrimonio de la Humanidad, marcan bien el inicio. Reservad días de playa en Porto de Galinhas, con sus piscinas naturales de aguas templadas."}, {"code": "RVN", "city": "Rovaniemi", "country": "Finlandia", "continent": "europa", "lat": 66.5647, "lon": 25.8303, "blurb": "Cruzad el Círculo Polar Ártico y visitad el Pueblo de Papá Noel, abierto todo el año. Reservad una noche para intentar ver la aurora boreal, y otra jornada para un paseo en trineo de renos o de perros husky por la nieve."}, {"code": "SAL", "city": "San Salvador", "country": "El Salvador", "continent": "america", "lat": 13.4409, "lon": -89.0557, "blurb": "El centro histórico y la Ruta de las Flores, con sus pueblos coloridos, marcan bien el viaje. Reservad una jornada para el volcán de Santa Ana o las playas de surf del Pacífico salvadoreño."}, {"code": "SCL", "city": "Santiago de Chile", "country": "Chile", "continent": "america", "lat": -33.393, "lon": -70.7858, "blurb": "El Cerro San Cristóbal y el barrio bohemio de Bellavista marcan bien el inicio, con los Andes nevados de fondo. Reservad una jornada para el Valle de Colchagua y sus viñedos, y otra para una escapada a la costa de Valparaíso."}, {"code": "SCQ", "city": "Santiago de Compostela", "country": "España", "continent": "europa", "lat": 42.8963, "lon": -8.4152, "blurb": "La Catedral de Santiago y su plaza del Obradoiro son la meta y el mejor punto de partida. Perdeos por el casco histórico y su gastronomía gallega, y reservad una jornada para la Costa da Morte cercana."}, {"code": "SDQ", "city": "Santo Domingo", "country": "Rep. Dominicana", "continent": "america", "lat": 18.4297, "lon": -69.6689, "blurb": "La Zona Colonial, la primera ciudad europea de América, marca bien el inicio. Visitad la Catedral Primada y el Alcázar de Colón, y reservad días de playa en Punta Cana o Bávaro, muy cerca de la capital."}, {"code": "SDR", "city": "Santander", "country": "España", "continent": "europa", "lat": 43.4271, "lon": -3.82, "blurb": "Pasead por el Sardinero y la Península de la Magdalena, con su palacio real de verano. Reservad una jornada para Santillana del Mar y las cuevas de Altamira, y otra para pueblos de la costa como Comillas o San Vicente."}, {"code": "SFO", "city": "San Francisco", "country": "EE. UU.", "continent": "america", "lat": 37.6213, "lon": -122.379, "blurb": "El Golden Gate y el barrio de Fisherman's Wharf marcan el primer día. Recorred las callejuelas empinadas y perdeos por Chinatown, y reservad una jornada para Napa Valley o Sausalito, al otro lado de la bahía."}, {"code": "SJO", "city": "San José", "country": "Costa Rica", "continent": "america", "lat": 9.9939, "lon": -84.2088, "blurb": "El centro histórico de San José es solo el punto de partida hacia la naturaleza costarricense. Reservad días para el volcán Arenal y sus aguas termales, y otros para Manuel Antonio, con playa y selva tropical en el mismo parque."}, {"code": "SJU", "city": "San Juan", "country": "Puerto Rico", "continent": "america", "lat": 18.4394, "lon": -66.0018, "blurb": "El Viejo San Juan, con sus fuertes coloniales y calles de colores, marca bien el inicio. Reservad una jornada para el bosque lluvioso de El Yunque, y otra para las playas de Condado o Isla Verde."}, {"code": "SPU", "city": "Split", "country": "Croacia", "continent": "europa", "lat": 43.5389, "lon": 16.2981, "blurb": "El Palacio de Diocleciano, en pleno centro histórico, es la gran cita del primer día. Reservad una jornada para las islas de Hvar o Brač en barco, y dejad tiempo para probar la cocina dálmata junto al puerto."}, {"code": "SVQ", "city": "Sevilla", "country": "España", "continent": "europa", "lat": 37.418, "lon": -5.8931, "blurb": "La Catedral, la Giralda y el Real Alcázar marcan el primer día. Perdeos por el barrio de Santa Cruz y cruzad el Guadalquivir hasta Triana, y reservad una noche para un tablao de flamenco auténtico."}, {"code": "TAR", "city": "Taranto", "country": "Italia", "continent": "europa", "lat": 40.5175, "lon": 17.4031, "blurb": "El casco antiguo de Taranto, entre dos mares, y su castillo aragonés marcan el inicio. Reservad una jornada para Matera y sus casas cueva, y otra para la costa de Puglia, con calas de aguas cristalinas."}, {"code": "TIA", "city": "Tirana", "country": "Albania", "continent": "europa", "lat": 41.4147, "lon": 19.7206, "blurb": "La colorida Plaza Skanderbeg y el búnker convertido en museo, BunkArt, marcan bien el primer día. Reservad una jornada para el Lago Ohrid o para Kruja, con su fortaleza en la montaña, ambos cerca de la capital."}, {"code": "TIV", "city": "Tívat", "country": "Montenegro", "continent": "europa", "lat": 42.4047, "lon": 18.7233, "blurb": "La bahía de Kotor, uno de los fiordos más bonitos del Mediterráneo, es la gran cita del viaje. Recorred las murallas de Kotor y el pueblo de Perast, y reservad una jornada para Budva y sus playas."}, {"code": "TOS", "city": "Tromsø", "country": "Noruega", "continent": "europa", "lat": 69.6833, "lon": 18.9189, "blurb": "Situada en pleno Ártico, Tromsø es perfecta para cazar auroras boreales varias noches seguidas. Visitad la Catedral Ártica y subid en teleférico al monte Storsteinen, y reservad un día para un safari en trineo de perros por la nieve."}, {"code": "TRS", "city": "Trieste", "country": "Italia", "continent": "europa", "lat": 45.8275, "lon": 13.4722, "blurb": "La Plaza Unità d'Italia, abierta al mar Adriático, marca el primer día. Visitad el Castillo de Miramare, y reservad una jornada para el altiplano del Carso cercano, con sus cuevas y vinos locales."}, {"code": "UIO", "city": "Quito", "country": "Ecuador", "continent": "america", "lat": -0.1292, "lon": -78.3575, "blurb": "El centro histórico colonial, uno de los mejor conservados de América, marca bien el inicio. Visitad el monumento de la Mitad del Mundo, y reservad días para el volcán Cotopaxi o las Islas Galápagos si el viaje continúa."}, {"code": "VCE", "city": "Venecia", "country": "Italia", "continent": "europa", "lat": 45.5053, "lon": 12.3519, "blurb": "Un paseo en góndola por los canales y la Plaza San Marco marcan el primer día. Perdeos por el barrio de Cannaregio, lejos de las multitudes, y reservad una jornada para las islas de Murano y Burano, con sus vidrios y casas de colores."}, {"code": "VGO", "city": "Vigo", "country": "España", "continent": "europa", "lat": 42.2318, "lon": -8.6268, "blurb": "El Casco Vello de Vigo y su puerto marisquero marcan bien el inicio. Reservad una jornada para las Islas Cíes, con playas caribeñas en pleno Atlántico, y otra para las Rías Baixas cercanas."}, {"code": "VIE", "city": "Viena", "country": "Austria", "continent": "europa", "lat": 48.1103, "lon": 16.5697, "blurb": "El Palacio de Schönbrunn y la Catedral de San Esteban marcan el primer día. Dedicad una tarde a un concierto clásico y a probar la tarta Sacher, y reservad otra jornada para el Palacio del Belvedere y sus jardines."}, {"code": "VLN", "city": "Valencia", "country": "Venezuela", "continent": "america", "lat": 10.1497, "lon": -67.9283, "blurb": "El centro histórico de Valencia y su animada plaza Bolívar marcan bien el inicio. Reservad tiempo para probar la gastronomía local y, si el viaje lo permite, una escapada a las playas cercanas de la costa venezolana."}, {"code": "XRY", "city": "Jerez de la Frontera", "country": "España", "continent": "europa", "lat": 36.7446, "lon": -6.0601, "blurb": "Visitad una bodega de vino de Jerez y ved un espectáculo en la Real Escuela de Arte Ecuestre. Perdeos por el casco histórico y reservad una noche para un tablao flamenco, cuna de este arte. Cádiz y sus playas quedan muy cerca."}, {"code": "YYZ", "city": "Toronto", "country": "Canadá", "continent": "america", "lat": 43.6777, "lon": -79.6248, "blurb": "La Torre CN y el barrio histórico de Distillery District marcan bien el primer día. Recorred el mercado de Kensington y el St. Lawrence Market, y reservad una jornada para las Cataratas del Niágara, a poco más de una hora en coche."}, {"code": "ZAG", "city": "Zagreb", "country": "Croacia", "continent": "europa", "lat": 45.7429, "lon": 16.0688, "blurb": "La Ciudad Alta y su catedral gótica marcan bien el inicio, junto al animado mercado de Dolac. Perdeos por los cafés de Tkalčićeva, y reservad una jornada para los Lagos de Plitvice, uno de los paisajes naturales más espectaculares de Europa."}, {"code": "ZRH", "city": "Zúrich", "country": "Suiza", "continent": "europa", "lat": 47.4647, "lon": 8.5492, "blurb": "El casco antiguo junto al lago de Zúrich y la calle Bahnhofstrasse marcan bien el inicio. Subid al Üetliberg para ver la ciudad y los Alpes al fondo, y reservad una jornada para una excursión en tren a Lucerna o al glaciar de Jungfrau."}];
+
+document.getElementById('stat-count').textContent = DESTINATIONS.length;
+
+const CONTINENT_COLOR = {
+  europa: '#1F4B47',
+  america: '#C9922E',
+  africa: '#C97B7B',
+  asia: '#7A5C8E'
+};
+
+const MAD = { lat: 40.4936, lon: -3.5668 };
+
+const map = L.map('map', { worldCopyJump: true, minZoom: 2 }).setView([25, 0], 2);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  maxZoom: 19
+}).addTo(map);
+
+const clusterGroup = L.markerClusterGroup({
+  maxClusterRadius: 40,
+  spiderfyOnMaxZoom: true,
+  iconCreateFunction: function(cluster){
+    const count = cluster.getChildCount();
+    return L.divIcon({
+      html: '<div style="background:#2B2620;color:#F3ECDA;border:2px solid #F3ECDA;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-family:\'Space Mono\',monospace;font-size:12px;font-weight:700;">' + count + '</div>',
+      className: '',
+      iconSize: [38, 38]
+    });
+  }
+});
+
+let flightLine = null;
+const markerByCode = {};
+
+function makeIcon(continent, isHub){
+  const color = isHub ? '#C97B7B' : (CONTINENT_COLOR[continent] || '#1F4B47');
+  const size = isHub ? 16 : 12;
+  return L.divIcon({
+    className: '',
+    html: '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+color+';border:2px solid #F3ECDA;box-shadow:0 0 0 1.5px '+color+';"></div>',
+    iconSize: [size, size]
+  });
+}
+
+DESTINATIONS.forEach(function(d){
+  const isHub = d.code === 'MAD';
+  const marker = L.marker([d.lat, d.lon], { icon: makeIcon(d.continent, isHub) });
+  marker.bindPopup(
+    '<div class="popup-code">' + d.code + '</div>' +
+    '<div class="popup-city">' + d.city + '</div>' +
+    '<div class="popup-hint">' + d.country + ' &middot; toca para ver el plan</div>'
+  );
+  marker.on('click', function(){ openPanel(d); });
+  marker.destinationCode = d.code;
+  markerByCode[d.code] = marker;
+  clusterGroup.addLayer(marker);
+});
+
+map.addLayer(clusterGroup);
+
+function drawRoute(dest){
+  if (flightLine) { map.removeLayer(flightLine); }
+  if (dest.code === 'MAD') return;
+  flightLine = L.polyline([[MAD.lat, MAD.lon], [dest.lat, dest.lon]], {
+    color: '#C9922E',
+    weight: 2,
+    dashArray: '6 8',
+    opacity: 0.85
+  }).addTo(map);
+}
+
+const panel = document.getElementById('panel');
+const overlay = document.getElementById('overlay');
+
+function openPanel(d){
+  document.getElementById('bp-code').textContent = d.code;
+  document.getElementById('bp-city').textContent = d.city;
+  document.getElementById('bp-country').textContent = d.country;
+  document.getElementById('bp-continent').textContent = d.continent.charAt(0).toUpperCase() + d.continent.slice(1);
+  document.getElementById('bp-blurb').textContent = d.blurb;
+  drawRoute(d);
+  panel.classList.add('open');
+  overlay.style.display = 'block';
+}
+
+function closePanel(){
+  panel.classList.remove('open');
+  overlay.style.display = 'none';
+}
+
+document.getElementById('panel-close').addEventListener('click', closePanel);
+overlay.addEventListener('click', closePanel);
+
+// Search
+const searchInput = document.getElementById('search');
+searchInput.addEventListener('input', function(){
+  const q = this.value.trim().toLowerCase();
+  if (!q) return;
+  const match = DESTINATIONS.find(function(d){
+    return d.city.toLowerCase().includes(q) || d.country.toLowerCase().includes(q) || d.code.toLowerCase() === q;
+  });
+  if (match){
+    map.flyTo([match.lat, match.lon], 6, { duration: 0.8 });
+    const m = markerByCode[match.code];
+    if (m) {
+      setTimeout(function(){ m.openPopup(); }, 850);
+    }
+  }
+});
+
+searchInput.addEventListener('keydown', function(e){
+  if (e.key === 'Enter'){
+    const q = this.value.trim().toLowerCase();
+    const match = DESTINATIONS.find(function(d){
+      return d.city.toLowerCase().includes(q) || d.country.toLowerCase().includes(q) || d.code.toLowerCase() === q;
+    });
+    if (match) openPanel(match);
+  }
+});
+</script>
+</body>
+</html>
