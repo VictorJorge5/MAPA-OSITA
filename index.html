@@ -246,15 +246,17 @@
     overflow: hidden;
     background: #fff;
   }
+  .week-row-wrap{
+    border-bottom: 1px solid var(--line);
+  }
+  .week-row-wrap:last-child{ border-bottom: none; }
   .week-row{
     display:flex;
     align-items:center;
     padding: 9px 12px;
-    border-bottom: 1px solid var(--line);
     gap: 10px;
     font-size: 13px;
   }
-  .week-row:last-child{ border-bottom:none; }
   .week-row .wd{
     font-family:'Space Mono', monospace;
     font-weight: 700;
@@ -286,6 +288,30 @@
     line-height: 1.5;
   }
   .week-row .flight-times b{ color: var(--ink); font-family:'Space Mono', monospace; font-weight:700; }
+  .toggle-flights{
+    font-family:'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--petrol);
+    background: none;
+    border: 1.5px solid var(--petrol);
+    border-radius: 999px;
+    padding: 3px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .flight-list-detail{
+    display: none;
+    margin: 8px 12px 10px;
+    padding: 8px 10px;
+    background: var(--paper-2);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+  .flight-list-detail.open{ display: block; }
+  .flight-list-detail b{ color: var(--ink); font-family:'Space Mono', monospace; font-weight:700; }
   .out-of-range-note{
     margin: 0 22px 16px;
     font-size: 12px;
@@ -766,6 +792,7 @@ function computeFilterMatches(targetOffset, range){
   Object.keys(SCHEDULE.byStation).forEach(function(code){
     const flights = SCHEDULE.byStation[code];
     for (let i=0;i<flights.length;i++){
+      if (flights[i][1] !== 0) continue; // solo contamos vuelos de ida (Madrid -> destino)
       const off = flights[i][0];
       if (off >= lo && off <= hi){ matches.add(code); break; }
     }
@@ -824,8 +851,10 @@ function renderWeek(code){
   document.getElementById('week-range-label').textContent = 'Semana del ' + fmtShort(monday) + ' al ' + fmtShort(sunday) + ' de ' + sunday.getFullYear();
 
   const flights = SCHEDULE.byStation[code] || [];
+  // Solo contamos los vuelos de ida (Madrid -> destino): la vuelta es el mismo viaje, no una opción distinta.
+  const outboundOnly = flights.filter(function(f){ return f[1] === 0; });
   const byOffset = {};
-  flights.forEach(function(f){
+  outboundOnly.forEach(function(f){
     (byOffset[f[0]] = byOffset[f[0]] || []).push(f);
   });
 
@@ -845,33 +874,53 @@ function renderWeek(code){
   for (let i=0;i<7;i++){
     const d = new Date(monday.getTime()); d.setDate(d.getDate()+i);
     const off = weekStartOffset + i;
-    const dayFlights = byOffset[off] || [];
+    const dayFlights = (byOffset[off] || []).slice().sort(function(a,b){ return a[3]-b[3]; });
     const count = dayFlights.length;
     let badgeClass = 'zero';
     if (count >= 1 && count <= 2) badgeClass = 'some';
     else if (count > 2) badgeClass = 'many';
 
-    let detail = '';
+    let inlineDetail = '';
+    let expandBtn = '';
+    let expandBlock = '';
     if (count >= 1 && count <= 2){
-      detail = dayFlights.map(function(f){
-        const dir = f[1];
-        const from = dir === 0 ? 'MAD' : code;
-        const to = dir === 0 ? code : 'MAD';
-        return '<b>' + from + '&rarr;' + to + '</b> ' + f[2] + ' &middot; ' + fmtMin(f[3]) + '&ndash;' + fmtMin(f[4]);
+      inlineDetail = dayFlights.map(function(f){
+        return '<b>' + f[2] + '</b> MAD&rarr;' + code + ' ' + fmtMin(f[3]) + '&ndash;' + fmtMin(f[4]);
       }).join('<br>');
+    } else if (count > 2){
+      expandBtn = '<button class="toggle-flights" data-day-idx="' + i + '">Ver vuelos</button>';
+      expandBlock = '<div class="flight-list-detail" id="flight-detail-' + i + '">' +
+        dayFlights.map(function(f){
+          return '<div><b>' + f[2] + '</b> MAD&rarr;' + code + ' &middot; ' + fmtMin(f[3]) + '&ndash;' + fmtMin(f[4]) + '</div>';
+        }).join('') +
+        '</div>';
     }
 
-    html += '<div class="week-row">' +
+    html += '<div class="week-row-wrap">' +
+      '<div class="week-row">' +
       '<div class="wd">' + WEEKDAY_NAMES[i].slice(0,3) + '<span class="date-sub">' + fmtShort(d) + '</span></div>' +
       '<div class="count-badge ' + badgeClass + '">' + count + (count===1 ? ' vuelo' : ' vuelos') + '</div>' +
-      '<div class="flight-times">' + detail + '</div>' +
+      '<div class="flight-times">' + inlineDetail + '</div>' +
+      expandBtn +
+      '</div>' +
+      expandBlock +
       '</div>';
   }
   document.getElementById('week-table').innerHTML = html;
+
+  document.querySelectorAll('.toggle-flights').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const idx = btn.getAttribute('data-day-idx');
+      const detail = document.getElementById('flight-detail-' + idx);
+      const isOpen = detail.classList.toggle('open');
+      btn.textContent = isOpen ? 'Ocultar vuelos' : 'Ver vuelos';
+    });
+  });
 }
 
 function renderMonthsStrip(code){
-  const flights = SCHEDULE.byStation[code] || [];
+  const allFlights = SCHEDULE.byStation[code] || [];
+  const flights = allFlights.filter(function(f){ return f[1] === 0; }); // solo ida, Madrid -> destino
   const monthsSet = new Set();
   flights.forEach(function(f){
     const d = dayOffsetToDate(f[0]);
@@ -899,7 +948,7 @@ function renderMonthsStrip(code){
     const dates = flights.map(function(f){ return f[0]; });
     const firstD = dayOffsetToDate(Math.min.apply(null, dates));
     const lastD = dayOffsetToDate(Math.max.apply(null, dates));
-    document.getElementById('schedule-summary').textContent = total + ' vuelos programados entre el ' + fmtShort(firstD) + ' y el ' + fmtShort(lastD) + '.';
+    document.getElementById('schedule-summary').textContent = total + ' vuelos de ida programados entre el ' + fmtShort(firstD) + ' y el ' + fmtShort(lastD) + '.';
   }
 }
 
