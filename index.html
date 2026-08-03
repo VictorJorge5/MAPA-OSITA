@@ -802,24 +802,29 @@
   .compare-months{ display:flex; gap:2px; flex-wrap:wrap; }
   .compare-months .month-chip{ flex: none; width: 26px; font-size: 8px; padding: 4px 0; }
 
-  /* ---------- Destination photo ---------- */
+  /* ---------- Destination photo gallery ---------- */
   .dest-photo-wrap{
     margin: 18px 22px 0;
     border-radius: 10px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     border: 2px solid var(--ink);
     background: var(--paper-2);
     min-height: 60px;
     display:flex;
     align-items:center;
-    justify-content:center;
+    justify-content:flex-start;
+    -webkit-overflow-scrolling: touch;
   }
-  .dest-photo-wrap img{
-    width: 100%;
-    max-height: 220px;
+  .dest-photo-wrap img.gallery-photo{
+    flex: 0 0 150px;
+    width: 150px;
+    height: 130px;
     object-fit: cover;
     display:block;
+    border-right: 2px solid var(--ink);
   }
+  .dest-photo-wrap img.gallery-photo:last-child{ border-right: none; }
   .dest-photo-wrap.empty{ display:none; }
   .photo-credit{
     margin: 4px 22px 0;
@@ -833,6 +838,7 @@
     font-size: 11px;
     color: var(--ink-soft);
     padding: 20px;
+    white-space: nowrap;
   }
 
   @media (max-width: 640px){
@@ -1718,44 +1724,81 @@ function loadDestinationPhoto(d){
   const wrap = document.getElementById('dest-photo-wrap');
   const creditP = document.getElementById('photo-credit');
   wrap.classList.remove('empty');
-  wrap.innerHTML = '<div class="photo-loading">Buscando una foto&hellip;</div>';
+  wrap.innerHTML = '<div class="photo-loading">Buscando fotos&hellip;</div>';
   creditP.style.display = 'none';
 
   if (d.code === 'MAD'){ wrap.classList.add('empty'); return; }
 
-  function renderPhoto(data){
+  function renderGallery(result){
     if (currentOpenCode !== d.code) return; // user already moved on
     const wrapEl = document.getElementById('dest-photo-wrap');
     const creditEl = document.getElementById('photo-credit');
-    const thumb = data && data.thumbnail && data.thumbnail.source;
-    if (!thumb){ wrapEl.classList.add('empty'); creditEl.style.display = 'none'; return; }
-    const link = (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page) || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(d.wiki));
-    wrapEl.innerHTML = '<img id="dest-photo-img" src="' + thumb + '" alt="' + (data.title || d.city) + '" loading="lazy">';
-    const imgEl = document.getElementById('dest-photo-img');
-    imgEl.addEventListener('load', function(){
-      creditEl.style.display = 'block';
-      document.getElementById('photo-credit-link').href = link;
-    });
-    imgEl.addEventListener('error', function(){
+    if (!result || !result.images || !result.images.length){
       wrapEl.classList.add('empty');
       creditEl.style.display = 'none';
+      return;
+    }
+    wrapEl.innerHTML = result.images.map(function(src, i){
+      return '<img class="gallery-photo" src="' + src + '" alt="' + result.title + ' ' + (i+1) + '" loading="lazy">';
+    }).join('');
+    Array.prototype.forEach.call(wrapEl.querySelectorAll('img.gallery-photo'), function(img){
+      img.addEventListener('error', function(){
+        img.remove();
+        if (!wrapEl.querySelector('img.gallery-photo')) wrapEl.classList.add('empty');
+      });
     });
+    document.getElementById('photo-credit-link').href = result.link;
+    creditEl.style.display = 'block';
   }
 
   if (photoCache[d.wiki]){
-    renderPhoto(photoCache[d.wiki]);
+    renderGallery(photoCache[d.wiki]);
     return;
   }
 
-  fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(d.wiki))
-    .then(function(r){ if (!r.ok) throw new Error('not found'); return r.json(); })
-    .then(function(data){
-      photoCache[d.wiki] = data;
-      renderPhoto(data);
-    })
-    .catch(function(){
-      if (currentOpenCode === d.code) wrap.classList.add('empty');
-    });
+  const summaryUrl = 'https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(d.wiki);
+  const mediaUrl = 'https://en.wikipedia.org/api/rest_v1/page/media-list/' + encodeURIComponent(d.wiki);
+  const BAD_PATTERN = /flag|logo|icon|coat[_ ]of[_ ]arms|locator|_map|symbol|emblem|seal[_ ]of|\.svg$/i;
+
+  Promise.all([
+    fetch(summaryUrl).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch(mediaUrl).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(results){
+    const summary = results[0];
+    const media = results[1];
+    const images = [];
+    const seen = {};
+
+    function addImage(url){
+      if (!url) return;
+      if (url.indexOf('//') === 0) url = 'https:' + url;
+      if (seen[url]) return;
+      seen[url] = true;
+      images.push(url);
+    }
+
+    if (summary && summary.thumbnail && summary.thumbnail.source) addImage(summary.thumbnail.source);
+
+    if (media && Array.isArray(media.items)){
+      media.items.forEach(function(item){
+        if (images.length >= 6) return;
+        if (item.type !== 'image') return;
+        if (item.showInGallery === false) return;
+        if (BAD_PATTERN.test(item.title || '')) return;
+        let src = null;
+        if (item.original && item.original.source) src = item.original.source;
+        else if (Array.isArray(item.srcset) && item.srcset.length) src = item.srcset[item.srcset.length - 1].src;
+        addImage(src);
+      });
+    }
+
+    const link = (summary && summary.content_urls && summary.content_urls.desktop && summary.content_urls.desktop.page)
+      || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(d.wiki));
+
+    const result = { images: images.slice(0, 6), link: link, title: (summary && summary.title) || d.city };
+    photoCache[d.wiki] = result;
+    renderGallery(result);
+  });
 }
 
 // ---------- List view ----------
