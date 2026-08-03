@@ -399,18 +399,19 @@
   }
   #panel{
     position: fixed;
-    top: 0; right: -420px;
+    top: 0; right: 0;
     width: 100%;
-    max-width: 420px;
+    max-width: min(880px, 94vw);
     height: 100%;
     background: var(--paper);
     border-left: 3px solid var(--ink);
     z-index: 1000;
-    transition: right 0.35s cubic-bezier(.2,.8,.2,1);
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
     overflow-y: auto;
     padding: 0;
   }
-  #panel.open{ right: 0; }
+  #panel.open{ transform: translateX(0); }
   .panel-close{
     position: absolute;
     top: 16px; right: 16px;
@@ -615,7 +616,6 @@
   .dest-table tr:last-child td{ border-bottom: none; }
   .dest-table tr{ cursor: pointer; }
   .dest-table tr:hover td{ background: var(--paper-2); }
-  .dest-table tr.faded-row td{ color: var(--ink-soft); opacity: 0.45; }
   .dest-table img.flag-mini{ width:18px; height:13px; object-fit:cover; border-radius:2px; vertical-align:middle; margin-right:6px; border:1px solid var(--line); }
   .dest-table .city-cell{ font-family:'Fraunces', serif; font-weight:600; }
   @media (max-width: 780px){
@@ -810,22 +810,26 @@
     overflow-y: hidden;
     border: 2px solid var(--ink);
     background: var(--paper-2);
-    min-height: 60px;
+    min-height: 220px;
     display:flex;
     align-items:center;
     justify-content:flex-start;
     -webkit-overflow-scrolling: touch;
   }
   .dest-photo-wrap img.gallery-photo{
-    flex: 0 0 150px;
-    width: 150px;
-    height: 130px;
+    flex: 0 0 280px;
+    width: 280px;
+    height: 240px;
     object-fit: cover;
     display:block;
     border-right: 2px solid var(--ink);
   }
   .dest-photo-wrap img.gallery-photo:last-child{ border-right: none; }
-  .dest-photo-wrap.empty{ display:none; }
+  .dest-photo-wrap.empty{ display:none; min-height: 0; }
+  @media (max-width: 640px){
+    .dest-photo-wrap{ min-height: 160px; }
+    .dest-photo-wrap img.gallery-photo{ flex-basis: 220px; width: 220px; height: 180px; }
+  }
   .photo-credit{
     margin: 4px 22px 0;
     font-size: 10px;
@@ -916,10 +920,8 @@
     <label for="trip-duration">Duración del viaje</label>
     <select id="trip-duration">
       <option value="0" selected>Cualquiera</option>
-      <option value="weekend">Finde (2-3 días)</option>
-      <option value="short">Escapada (4-6 días)</option>
-      <option value="medium">Media (7-9 días)</option>
-      <option value="long">Vacaciones largas (10+ días)</option>
+      <option value="corto">Viajes cortos (2-6 días)</option>
+      <option value="largo">Viajes largos (7+ días)</option>
     </select>
   </div>
   <div class="filter-field">
@@ -1224,16 +1226,11 @@ function parseFirstNumber(str){
 }
 function durationBucket(str){
   const n = parseFirstNumber(str);
-  if (n <= 3) return 'weekend';
-  if (n <= 6) return 'short';
-  if (n <= 9) return 'medium';
-  return 'long';
+  return n <= 6 ? 'corto' : 'largo';
 }
 const DURATION_BUCKET_LABELS = {
-  weekend: 'finde (2-3 días)',
-  short: 'escapada (4-6 días)',
-  medium: 'media (7-9 días)',
-  long: 'vacaciones largas (10+ días)'
+  corto: 'viajes cortos (2-6 días)',
+  largo: 'viajes largos (7+ días)'
 };
 
 function applyFilter(){
@@ -1769,11 +1766,21 @@ function loadDestinationPhoto(d){
     const images = [];
     const seen = {};
 
+    function fileKeyFromUrl(url){
+      if (!url) return null;
+      const parts = url.split('/');
+      let last = parts[parts.length - 1] || '';
+      try { last = decodeURIComponent(last); } catch (e) {}
+      last = last.replace(/^\d+px-/, '');
+      return last.toLowerCase();
+    }
+
     function addImage(url){
       if (!url) return;
       if (url.indexOf('//') === 0) url = 'https:' + url;
-      if (seen[url]) return;
-      seen[url] = true;
+      const key = fileKeyFromUrl(url);
+      if (!key || seen[key]) return;
+      seen[key] = true;
       images.push(url);
     }
 
@@ -1808,7 +1815,11 @@ function buildListRows(){
   const refOffset = dateActive ? dateToDayOffset(new Date(dateVal + 'T00:00:00')) : dateToDayOffset(clampToScheduleRange(new Date()));
   const dayOffsetExact = dateActive ? dateToDayOffset(new Date(dateVal + 'T00:00:00')) : null;
 
-  return DESTINATIONS.filter(function(d){ return d.code !== 'MAD'; }).map(function(d){
+  return DESTINATIONS.filter(function(d){
+    if (d.code === 'MAD') return false;
+    if (currentFilterMatches && !currentFilterMatches.has(d.code)) return false; // oculta las que no cumplen el filtro
+    return true;
+  }).map(function(d){
     const flights = (SCHEDULE.byStation[d.code] || []).filter(function(f){ return f[1] === 0; });
     let nextOffset = null;
     flights.forEach(function(f){
@@ -1821,18 +1832,14 @@ function buildListRows(){
       dayFlightCount = flights.filter(function(f){ return f[0] === dayOffsetExact; }).length;
     }
 
-    let statusLabel = '—', faded = false;
-    if (currentFilterMatches){
-      const isMatch = currentFilterMatches.has(d.code);
-      statusLabel = isMatch ? 'Disponible' : 'Sin vuelos en el filtro';
-      faded = !isMatch;
-    }
+    const statusLabel = currentFilterMatches ? 'Disponible' : '—';
+
     return {
       code: d.code, city: d.city, country: d.country, continent: d.continent, cc: d.cc,
       duration: d.duration, durationSort: parseFirstNumber(d.duration),
       dayFlightCount: dayFlightCount,
       nextOffset: nextOffset === null ? Infinity : nextOffset, nextLabel: nextLabel,
-      statusLabel: statusLabel, faded: faded
+      statusLabel: statusLabel
     };
   });
 }
@@ -1852,10 +1859,14 @@ function renderListTable(){
     return 0;
   });
   const tbody = document.getElementById('dest-table-body');
+  if (!rows.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:20px;">Ningún destino cumple el filtro actual.</td></tr>';
+    return;
+  }
   tbody.innerHTML = rows.map(function(r){
     const flag = r.cc ? '<img class="flag-mini" src="https://flagcdn.com/w40/' + r.cc + '.png" alt="">' : '';
     const dayFlightsLabel = r.dayFlightCount < 0 ? '&mdash;' : (r.dayFlightCount + (r.dayFlightCount === 1 ? ' vuelo' : ' vuelos'));
-    return '<tr class="' + (r.faded ? 'faded-row' : '') + '" data-code="' + r.code + '">' +
+    return '<tr data-code="' + r.code + '">' +
       '<td class="city-cell">' + flag + r.city + '</td>' +
       '<td>' + r.continent.charAt(0).toUpperCase() + r.continent.slice(1) + '</td>' +
       '<td>' + r.duration + '</td>' +
