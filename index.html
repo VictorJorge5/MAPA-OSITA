@@ -205,6 +205,32 @@
   }
   .filter-status.active{ display:block; }
 
+  .toggle-advanced{
+    display: none;
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--petrol);
+    background: none;
+    border: none;
+    padding: 4px 0;
+    cursor: pointer;
+    text-align: left;
+  }
+  .advanced-filters{ display: contents; }
+
+  @media (max-width: 780px){
+    .toggle-advanced{ display: block; flex-basis: 100%; }
+    .advanced-filters{
+      display: none;
+      flex-basis: 100%;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .advanced-filters.open{ display: flex; }
+    .filter-btn{ flex: 1 1 auto; }
+  }
+
   /* faded / unavailable markers */
   .marker-faded{ opacity: 0.28; filter: grayscale(1); }
 
@@ -619,8 +645,39 @@
   .dest-table img.flag-mini{ width:18px; height:13px; object-fit:cover; border-radius:2px; vertical-align:middle; margin-right:6px; border:1px solid var(--line); }
   .dest-table .city-cell{ font-family:'Fraunces', serif; font-weight:600; }
   @media (max-width: 780px){
-    .dest-table{ font-size: 12px; }
-    .dest-table th, .dest-table td{ padding: 8px; }
+    .dest-table thead{ display: none; }
+    .dest-table, .dest-table tbody, .dest-table tr, .dest-table td{ display: block; width: 100%; }
+    .dest-table{ border-radius: 12px; }
+    .dest-table tr{
+      border-bottom: 2px solid var(--ink);
+      padding: 12px 4px;
+    }
+    .dest-table tr:last-child{ border-bottom: none; }
+    .dest-table tr:hover td{ background: none; }
+    .dest-table td{
+      border: none;
+      padding: 4px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .dest-table td[data-label]:before{
+      content: attr(data-label);
+      font-family:'Space Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-soft);
+      margin-right: 10px;
+    }
+    .dest-table td.city-cell{
+      font-size: 17px;
+      padding: 6px 10px 10px;
+      border-bottom: 1px dashed var(--line);
+      margin-bottom: 4px;
+      justify-content: flex-start;
+    }
   }
 
   /* ---------- Return-trip schedule ---------- */
@@ -850,6 +907,12 @@
     #panel{ max-width: 100%; }
     .stamp{ display:none; }
     .bp-dashed:before, .bp-dashed:after{ display:none; }
+    #map{ height: 52vh; min-height: 320px; }
+    header{ padding: 40px 18px 28px; }
+    .stats-row{ gap: 10px; }
+    .legend{ gap: 10px; font-size: 11px; }
+    .controls{ gap: 10px; }
+    .search-wrap{ flex-basis: 100%; max-width: none; }
   }
 </style>
 </head>
@@ -907,40 +970,43 @@
       <option value="7">Domingo</option>
     </select>
   </div>
-  <div class="filter-field" id="range-field">
-    <label for="trip-range">Rango de días</label>
-    <select id="trip-range">
-      <option value="0">Solo ese día</option>
-      <option value="1">&plusmn; 1 día</option>
-      <option value="2">&plusmn; 2 días</option>
-      <option value="3">&plusmn; 3 días</option>
-      <option value="4">&plusmn; 4 días</option>
-      <option value="5">&plusmn; 5 días</option>
-      <option value="6">&plusmn; 6 días</option>
-      <option value="7" selected>&plusmn; 7 días</option>
-      <option value="14">&plusmn; 14 días</option>
-      <option value="30">&plusmn; 30 días</option>
-    </select>
-  </div>
-  <div class="filter-field">
-    <label for="trip-minflights">Vuelos mínimos ese día</label>
-    <select id="trip-minflights">
-      <option value="0" selected>Cualquiera (usa el rango)</option>
-      <option value="1">1 o más</option>
-      <option value="2">2 o más</option>
-      <option value="3">3 o más</option>
-      <option value="4">4 o más</option>
-      <option value="5">5 o más</option>
-      <option value="6">6 o más</option>
-    </select>
-  </div>
-  <div class="filter-field">
-    <label for="trip-duration">Duración del viaje</label>
-    <select id="trip-duration">
-      <option value="0" selected>Cualquiera</option>
-      <option value="corto">Viajes cortos (2-6 días)</option>
-      <option value="largo">Viajes largos (7+ días)</option>
-    </select>
+  <button type="button" class="toggle-advanced" id="toggle-advanced-filters">Más filtros &#9662;</button>
+  <div class="advanced-filters" id="advanced-filters">
+    <div class="filter-field" id="range-field">
+      <label for="trip-range">Rango de días</label>
+      <select id="trip-range">
+        <option value="0">Solo ese día</option>
+        <option value="1">&plusmn; 1 día</option>
+        <option value="2">&plusmn; 2 días</option>
+        <option value="3">&plusmn; 3 días</option>
+        <option value="4">&plusmn; 4 días</option>
+        <option value="5">&plusmn; 5 días</option>
+        <option value="6">&plusmn; 6 días</option>
+        <option value="7" selected>&plusmn; 7 días</option>
+        <option value="14">&plusmn; 14 días</option>
+        <option value="30">&plusmn; 30 días</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="trip-minflights">Vuelos mínimos ese día</label>
+      <select id="trip-minflights">
+        <option value="0" selected>Cualquiera (usa el rango)</option>
+        <option value="1">1 o más</option>
+        <option value="2">2 o más</option>
+        <option value="3">3 o más</option>
+        <option value="4">4 o más</option>
+        <option value="5">5 o más</option>
+        <option value="6">6 o más</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="trip-duration">Duración del viaje</label>
+      <select id="trip-duration">
+        <option value="0" selected>Cualquiera</option>
+        <option value="corto">Viajes cortos (2-6 días)</option>
+        <option value="largo">Viajes largos (7+ días)</option>
+      </select>
+    </div>
   </div>
   <button class="filter-btn" id="apply-filter">Filtrar destinos</button>
   <button class="filter-btn ghost" id="clear-filter">Quitar filtro</button>
@@ -1537,6 +1603,12 @@ function closePanel(){
 
 document.getElementById('panel-close').addEventListener('click', closePanel);
 overlay.addEventListener('click', closePanel);
+document.getElementById('toggle-advanced-filters').addEventListener('click', function(){
+  const adv = document.getElementById('advanced-filters');
+  const isOpen = adv.classList.toggle('open');
+  this.innerHTML = isOpen ? 'Menos filtros &#9652;' : 'Más filtros &#9662;';
+});
+
 document.getElementById('apply-filter').addEventListener('click', applyFilter);
 document.getElementById('clear-filter').addEventListener('click', clearFilterFn);
 document.getElementById('trip-minflights').addEventListener('change', function(){
@@ -1889,11 +1961,11 @@ function renderListTable(){
     const dayFlightsLabel = r.dayFlightCount < 0 ? '&mdash;' : (r.dayFlightCount + (r.dayFlightCount === 1 ? ' vuelo' : ' vuelos'));
     return '<tr data-code="' + r.code + '">' +
       '<td class="city-cell">' + flag + r.city + '</td>' +
-      '<td>' + r.continent.charAt(0).toUpperCase() + r.continent.slice(1) + '</td>' +
-      '<td>' + r.duration + '</td>' +
-      '<td>' + dayFlightsLabel + '</td>' +
-      '<td>' + r.nextLabel + '</td>' +
-      '<td>' + r.statusLabel + '</td>' +
+      '<td data-label="Continente">' + r.continent.charAt(0).toUpperCase() + r.continent.slice(1) + '</td>' +
+      '<td data-label="Duración">' + r.duration + '</td>' +
+      '<td data-label="Vuelos ese día">' + dayFlightsLabel + '</td>' +
+      '<td data-label="Próximo vuelo">' + r.nextLabel + '</td>' +
+      '<td data-label="Estado">' + r.statusLabel + '</td>' +
       '</tr>';
   }).join('');
 }
