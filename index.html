@@ -783,6 +783,7 @@
     text-align: left;
     vertical-align: top;
     font-size: 13px;
+    line-height: 1.6;
   }
   .compare-table th{
     background: var(--petrol);
@@ -886,8 +887,25 @@
 
 <div class="filter-bar">
   <div class="filter-field">
-    <label for="trip-date">Fecha del viaje</label>
+    <label for="trip-date">Fecha de ida</label>
     <input type="date" id="trip-date">
+  </div>
+  <div class="filter-field">
+    <label for="trip-return-date">Fecha de vuelta (opcional)</label>
+    <input type="date" id="trip-return-date">
+  </div>
+  <div class="filter-field">
+    <label for="weekday-quick">Salgo en</label>
+    <select id="weekday-quick">
+      <option value="0" selected>Cualquier día</option>
+      <option value="1">Lunes</option>
+      <option value="2">Martes</option>
+      <option value="3">Miércoles</option>
+      <option value="4">Jueves</option>
+      <option value="5">Viernes</option>
+      <option value="6">Sábado</option>
+      <option value="7">Domingo</option>
+    </select>
   </div>
   <div class="filter-field" id="range-field">
     <label for="trip-range">Rango de días</label>
@@ -922,23 +940,6 @@
       <option value="0" selected>Cualquiera</option>
       <option value="corto">Viajes cortos (2-6 días)</option>
       <option value="largo">Viajes largos (7+ días)</option>
-    </select>
-  </div>
-  <div class="filter-field">
-    <label for="trip-return-date">Fecha de vuelta (opcional)</label>
-    <input type="date" id="trip-return-date">
-  </div>
-  <div class="filter-field">
-    <label for="weekday-quick">Salgo en</label>
-    <select id="weekday-quick">
-      <option value="0" selected>Cualquier día</option>
-      <option value="1">Lunes</option>
-      <option value="2">Martes</option>
-      <option value="3">Miércoles</option>
-      <option value="4">Jueves</option>
-      <option value="5">Viernes</option>
-      <option value="6">Sábado</option>
-      <option value="7">Domingo</option>
     </select>
   </div>
   <button class="filter-btn" id="apply-filter">Filtrar destinos</button>
@@ -1650,9 +1651,26 @@ function openCompareModal(){
   if (compareList.length === 0) return;
   const overlayEl = document.getElementById('compare-modal-overlay');
   const body = document.getElementById('compare-modal-body');
-  const refDate = (activeFilter && !activeFilter.dateless) ? dayOffsetToDate(activeFilter.targetOffset) : clampToScheduleRange(new Date());
-  const refMonth = refDate.getMonth();
-  const refOffset = dateToDayOffset(refDate);
+
+  const tripDateVal = document.getElementById('trip-date').value;
+  const tripReturnVal = document.getElementById('trip-return-date').value;
+  const idaDate = tripDateVal ? new Date(tripDateVal + 'T00:00:00') : clampToScheduleRange(new Date());
+  const idaOffset = dateToDayOffset(idaDate);
+  const refMonth = idaDate.getMonth();
+  const vueltaDate = tripReturnVal ? new Date(tripReturnVal + 'T00:00:00') : null;
+  const vueltaOffset = vueltaDate ? dateToDayOffset(vueltaDate) : null;
+
+  function flightListHtml(code, direction, offset){
+    if (offset === null) return 'Elige una fecha de vuelta';
+    const from = direction === 0 ? 'MAD' : code;
+    const to = direction === 0 ? code : 'MAD';
+    const flights = (SCHEDULE.byStation[code] || []).filter(function(f){ return f[1] === direction && f[0] === offset; })
+      .slice().sort(function(a,b){ return a[3]-b[3]; });
+    if (!flights.length) return 'Sin vuelos ese día';
+    return flights.map(function(f){
+      return '<b>' + f[2] + '</b> ' + from + '&rarr;' + to + ' ' + fmtMin(f[3]) + '&ndash;' + fmtMin(f[4]);
+    }).join('<br>');
+  }
 
   let html = '<table class="compare-table"><tr><td class="row-label">Destino</td>';
   compareList.forEach(function(code){
@@ -1697,10 +1715,13 @@ function openCompareModal(){
     strip += '</div>';
     html += '<td>' + strip + '</td>';
   });
-  html += '</tr><tr><td class="row-label">Vuelos el ' + fmtShort(refDate) + '</td>';
+  html += '</tr><tr><td class="row-label">Vuelos de ida<br>' + fmtShort(idaDate) + '</td>';
   compareList.forEach(function(code){
-    const flights = (SCHEDULE.byStation[code] || []).filter(function(f){ return f[1] === 0 && f[0] === refOffset; });
-    html += '<td>' + (flights.length === 0 ? 'Sin vuelos ese día' : flights.length + ' vuelo' + (flights.length===1?'':'s')) + '</td>';
+    html += '<td>' + flightListHtml(code, 0, idaOffset) + '</td>';
+  });
+  html += '</tr><tr><td class="row-label">Vuelos de vuelta<br>' + (vueltaDate ? fmtShort(vueltaDate) : '&mdash;') + '</td>';
+  compareList.forEach(function(code){
+    html += '<td>' + flightListHtml(code, 1, vueltaOffset) + '</td>';
   });
   html += '</tr></table>';
 
@@ -1898,6 +1919,15 @@ document.querySelectorAll('.dest-table th[data-sort]').forEach(function(th){
 });
 
 document.getElementById('trip-date').addEventListener('change', function(){
+  if (this.value){
+    const idaDate = new Date(this.value + 'T00:00:00');
+    const nextDay = new Date(idaDate.getTime());
+    nextDay.setDate(nextDay.getDate() + 1);
+    const clamped = clampToScheduleRange(nextDay);
+    document.getElementById('trip-return-date').value = clamped.toISOString().slice(0,10);
+    currentWeekMondayReturn = null;
+    if (currentOpenCode && currentOpenCode !== 'MAD') renderVueltaWeek(currentOpenCode);
+  }
   if (document.getElementById('list-wrap').classList.contains('active')) renderListTable();
 });
 
