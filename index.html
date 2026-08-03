@@ -413,16 +413,21 @@
   #panel.open{ right: 0; }
   .panel-close{
     position: absolute;
-    top: 18px; right: 18px;
-    width: 34px; height: 34px;
+    top: 16px; right: 16px;
+    width: 38px; height: 38px;
     border-radius: 50%;
     border: 2px solid var(--ink);
-    background: var(--paper);
-    font-size: 16px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 20px;
+    line-height: 1;
     cursor: pointer;
     display:flex; align-items:center; justify-content:center;
     font-family: 'Space Mono', monospace;
+    z-index: 20;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
   }
+  .panel-close:hover{ background: var(--rose); border-color: var(--rose); }
   .boarding-pass{
     margin: 26px 22px 0;
     border: 2px solid var(--ink);
@@ -546,38 +551,6 @@
     color: var(--ink-soft);
   }
   footer .heart{ color: var(--rose); }
-
-  /* ---------- Weekday quick picks ---------- */
-  .weekday-quick{
-    display:flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .weekday-quick .wq-label{
-    font-family:'Space Mono', monospace;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--petrol);
-    margin-right: 2px;
-  }
-  .weekday-btn{
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    border: 2px solid var(--ink);
-    background: #fff;
-    color: var(--ink);
-    font-family:'Space Mono', monospace;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .weekday-btn.active{
-    background: var(--petrol);
-    color: var(--paper);
-    border-color: var(--petrol);
-  }
 
   /* ---------- View toggle (map / list) ---------- */
   .view-toggle{
@@ -947,15 +920,18 @@
     <label for="trip-return-date">Fecha de vuelta (opcional)</label>
     <input type="date" id="trip-return-date">
   </div>
-  <div class="filter-field weekday-quick">
-    <span class="wq-label">Salgo en:</span>
-    <button type="button" class="weekday-btn" data-wd="0">L</button>
-    <button type="button" class="weekday-btn" data-wd="1">M</button>
-    <button type="button" class="weekday-btn" data-wd="2">X</button>
-    <button type="button" class="weekday-btn" data-wd="3">J</button>
-    <button type="button" class="weekday-btn" data-wd="4">V</button>
-    <button type="button" class="weekday-btn" data-wd="5">S</button>
-    <button type="button" class="weekday-btn" data-wd="6">D</button>
+  <div class="filter-field">
+    <label for="weekday-quick">Salgo en</label>
+    <select id="weekday-quick">
+      <option value="0" selected>Cualquier día</option>
+      <option value="1">Lunes</option>
+      <option value="2">Martes</option>
+      <option value="3">Miércoles</option>
+      <option value="4">Jueves</option>
+      <option value="5">Viernes</option>
+      <option value="6">Sábado</option>
+      <option value="7">Domingo</option>
+    </select>
   </div>
   <button class="filter-btn" id="apply-filter">Filtrar destinos</button>
   <button class="filter-btn ghost" id="clear-filter">Quitar filtro</button>
@@ -973,6 +949,7 @@
         <th data-sort="city">Destino <span class="arrow"></span></th>
         <th data-sort="continent">Continente <span class="arrow"></span></th>
         <th data-sort="duration">Duración <span class="arrow"></span></th>
+        <th data-sort="dayflights"><span id="th-dayflights-label">Vuelos ese día</span> <span class="arrow"></span></th>
         <th data-sort="next">Próximo vuelo <span class="arrow"></span></th>
         <th data-sort="status">Estado <span class="arrow"></span></th>
       </tr>
@@ -1339,7 +1316,7 @@ function clearFilterFn(){
   document.getElementById('trip-minflights').value = '0';
   document.getElementById('trip-duration').value = '0';
   document.getElementById('range-field').classList.remove('disabled');
-  document.querySelectorAll('.weekday-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('weekday-quick').value = '0';
   if (document.getElementById('list-wrap').classList.contains('active')) renderListTable();
 }
 
@@ -1602,25 +1579,23 @@ panel.addEventListener('click', function(e){
   btn.textContent = isOpen ? 'Ocultar vuelos' : 'Ver vuelos';
 });
 
-// Weekday quick picks
-document.querySelectorAll('.weekday-btn').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    document.querySelectorAll('.weekday-btn').forEach(function(b){ b.classList.remove('active'); });
-    this.classList.add('active');
-    const wd = parseInt(this.getAttribute('data-wd'), 10); // 0=Lun..6=Dom
-    const dateField = document.getElementById('trip-date');
-    const base = dateField.value ? new Date(dateField.value + 'T00:00:00') : clampToScheduleRange(new Date());
-    let d = new Date(base.getTime());
-    for (let i=0;i<7;i++){
-      const jsDay = d.getDay();
-      const mondayIndexed = (jsDay === 0) ? 6 : jsDay - 1;
-      if (mondayIndexed === wd) break;
-      d.setDate(d.getDate() + 1);
-    }
-    d = clampToScheduleRange(d);
-    dateField.value = d.toISOString().slice(0,10);
-    applyFilter();
-  });
+// Weekday quick pick (dropdown)
+document.getElementById('weekday-quick').addEventListener('change', function(){
+  const val = parseInt(this.value, 10); // 0=cualquiera, 1=Lunes..7=Domingo
+  if (val === 0) return;
+  const wd = val - 1; // 0=Lunes..6=Domingo
+  const dateField = document.getElementById('trip-date');
+  const base = dateField.value ? new Date(dateField.value + 'T00:00:00') : clampToScheduleRange(new Date());
+  let d = new Date(base.getTime());
+  for (let i=0;i<7;i++){
+    const jsDay = d.getDay();
+    const mondayIndexed = (jsDay === 0) ? 6 : jsDay - 1;
+    if (mondayIndexed === wd) break;
+    d.setDate(d.getDate() + 1);
+  }
+  d = clampToScheduleRange(d);
+  dateField.value = d.toISOString().slice(0,10);
+  applyFilter();
 });
 
 // ---------- Compare feature ----------
@@ -1751,13 +1726,20 @@ function loadDestinationPhoto(d){
   function renderPhoto(data){
     if (currentOpenCode !== d.code) return; // user already moved on
     const wrapEl = document.getElementById('dest-photo-wrap');
+    const creditEl = document.getElementById('photo-credit');
     const thumb = data && data.thumbnail && data.thumbnail.source;
-    if (!thumb){ wrapEl.classList.add('empty'); return; }
-    const bigger = thumb.replace(/\/(\d+)px-/, '/640px-');
-    wrapEl.innerHTML = '<img src="' + bigger + '" alt="' + (data.title || d.city) + '" loading="lazy" onerror="this.closest(\'.dest-photo-wrap\').classList.add(\'empty\')">';
+    if (!thumb){ wrapEl.classList.add('empty'); creditEl.style.display = 'none'; return; }
     const link = (data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page) || ('https://en.wikipedia.org/wiki/' + encodeURIComponent(d.wiki));
-    document.getElementById('photo-credit-link').href = link;
-    document.getElementById('photo-credit').style.display = 'block';
+    wrapEl.innerHTML = '<img id="dest-photo-img" src="' + thumb + '" alt="' + (data.title || d.city) + '" loading="lazy">';
+    const imgEl = document.getElementById('dest-photo-img');
+    imgEl.addEventListener('load', function(){
+      creditEl.style.display = 'block';
+      document.getElementById('photo-credit-link').href = link;
+    });
+    imgEl.addEventListener('error', function(){
+      wrapEl.classList.add('empty');
+      creditEl.style.display = 'none';
+    });
   }
 
   if (photoCache[d.wiki]){
@@ -1779,7 +1761,9 @@ function loadDestinationPhoto(d){
 // ---------- List view ----------
 function buildListRows(){
   const dateVal = document.getElementById('trip-date').value;
-  const refOffset = dateVal ? dateToDayOffset(new Date(dateVal + 'T00:00:00')) : dateToDayOffset(clampToScheduleRange(new Date()));
+  const dateActive = !!dateVal;
+  const refOffset = dateActive ? dateToDayOffset(new Date(dateVal + 'T00:00:00')) : dateToDayOffset(clampToScheduleRange(new Date()));
+  const dayOffsetExact = dateActive ? dateToDayOffset(new Date(dateVal + 'T00:00:00')) : null;
 
   return DESTINATIONS.filter(function(d){ return d.code !== 'MAD'; }).map(function(d){
     const flights = (SCHEDULE.byStation[d.code] || []).filter(function(f){ return f[1] === 0; });
@@ -1788,6 +1772,12 @@ function buildListRows(){
       if (f[0] >= refOffset && (nextOffset === null || f[0] < nextOffset)) nextOffset = f[0];
     });
     const nextLabel = nextOffset === null ? 'Sin vuelos programados' : fmtShort(dayOffsetToDate(nextOffset));
+
+    let dayFlightCount = -1; // -1 = no hay fecha seleccionada
+    if (dateActive){
+      dayFlightCount = flights.filter(function(f){ return f[0] === dayOffsetExact; }).length;
+    }
+
     let statusLabel = '—', faded = false;
     if (currentFilterMatches){
       const isMatch = currentFilterMatches.has(d.code);
@@ -1797,6 +1787,7 @@ function buildListRows(){
     return {
       code: d.code, city: d.city, country: d.country, continent: d.continent, cc: d.cc,
       duration: d.duration, durationSort: parseFirstNumber(d.duration),
+      dayFlightCount: dayFlightCount,
       nextOffset: nextOffset === null ? Infinity : nextOffset, nextLabel: nextLabel,
       statusLabel: statusLabel, faded: faded
     };
@@ -1805,6 +1796,10 @@ function buildListRows(){
 
 let listSortKey = 'city', listSortAsc = true;
 function renderListTable(){
+  const dateVal = document.getElementById('trip-date').value;
+  const labelEl = document.getElementById('th-dayflights-label');
+  labelEl.textContent = dateVal ? ('Vuelos el ' + fmtShort(new Date(dateVal + 'T00:00:00'))) : 'Vuelos (elige fecha)';
+
   const rows = buildListRows();
   rows.sort(function(a,b){
     let av = a[listSortKey], bv = b[listSortKey];
@@ -1816,10 +1811,12 @@ function renderListTable(){
   const tbody = document.getElementById('dest-table-body');
   tbody.innerHTML = rows.map(function(r){
     const flag = r.cc ? '<img class="flag-mini" src="https://flagcdn.com/w40/' + r.cc + '.png" alt="">' : '';
+    const dayFlightsLabel = r.dayFlightCount < 0 ? '&mdash;' : (r.dayFlightCount + (r.dayFlightCount === 1 ? ' vuelo' : ' vuelos'));
     return '<tr class="' + (r.faded ? 'faded-row' : '') + '" data-code="' + r.code + '">' +
       '<td class="city-cell">' + flag + r.city + '</td>' +
       '<td>' + r.continent.charAt(0).toUpperCase() + r.continent.slice(1) + '</td>' +
       '<td>' + r.duration + '</td>' +
+      '<td>' + dayFlightsLabel + '</td>' +
       '<td>' + r.nextLabel + '</td>' +
       '<td>' + r.statusLabel + '</td>' +
       '</tr>';
@@ -1834,16 +1831,20 @@ document.getElementById('dest-table-body').addEventListener('click', function(e)
   if (d) openPanel(d);
 });
 
-const SORT_KEY_MAP = { city: 'city', continent: 'continent', duration: 'durationSort', next: 'nextOffset', status: 'statusLabel' };
+const SORT_KEY_MAP = { city: 'city', continent: 'continent', duration: 'durationSort', dayflights: 'dayFlightCount', next: 'nextOffset', status: 'statusLabel' };
 document.querySelectorAll('.dest-table th[data-sort]').forEach(function(th){
   th.addEventListener('click', function(){
     const key = this.getAttribute('data-sort');
     const actualKey = SORT_KEY_MAP[key] || key;
-    if (listSortKey === actualKey){ listSortAsc = !listSortAsc; } else { listSortKey = actualKey; listSortAsc = true; }
+    if (listSortKey === actualKey){ listSortAsc = !listSortAsc; } else { listSortKey = actualKey; listSortAsc = (actualKey === 'dayFlightCount') ? false : true; }
     document.querySelectorAll('.dest-table th .arrow').forEach(function(a){ a.textContent = ''; });
     this.querySelector('.arrow').textContent = listSortAsc ? '▲' : '▼';
     renderListTable();
   });
+});
+
+document.getElementById('trip-date').addEventListener('change', function(){
+  if (document.getElementById('list-wrap').classList.contains('active')) renderListTable();
 });
 
 document.getElementById('view-map-btn').addEventListener('click', function(){
