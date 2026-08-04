@@ -925,6 +925,223 @@
   .compare-months{ display:flex; gap:2px; flex-wrap:wrap; }
   .compare-months .month-chip{ flex: none; width: 26px; font-size: 8px; padding: 4px 0; }
 
+  /* ---------- Swipe / "Modo parejas" ---------- */
+  .swipe-launch-btn{
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 9px 16px;
+    border: 2px solid var(--rose);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--rose);
+    cursor: pointer;
+  }
+  .swipe-launch-btn:hover{ background: var(--rose); color: #fff; }
+
+  #swipe-overlay{
+    position: fixed;
+    inset: 0;
+    background: var(--paper);
+    z-index: 3000;
+    display: none;
+    flex-direction: column;
+  }
+  #swipe-overlay.active{ display: flex; }
+  .swipe-header{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 2px solid var(--ink);
+    flex-shrink: 0;
+  }
+  .swipe-close{
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 20px;
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .swipe-progress{
+    font-family:'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .swipe-screen{
+    flex: 1;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+    text-align: center;
+  }
+  #swipe-intro h2{
+    font-family:'Fraunces', serif;
+    font-size: 32px;
+    margin: 0 0 14px;
+  }
+  #swipe-intro p{
+    max-width: 460px;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 8px;
+  }
+  .swipe-intro-note{
+    font-family:'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--petrol);
+    margin-bottom: 24px !important;
+  }
+
+  #swipe-deck-screen{ justify-content: space-between; padding-bottom: 30px; }
+  #swipe-card-stack{
+    position: relative;
+    width: min(340px, 88vw);
+    height: min(480px, 60vh);
+    margin-top: 10px;
+  }
+  .swipe-card{
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 18px;
+    border: 3px solid var(--ink);
+    background: #fff;
+    overflow: hidden;
+    display:flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    touch-action: none;
+    cursor: grab;
+  }
+  .swipe-card .card-photo{
+    flex: 1 1 auto;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--paper-2);
+    position: relative;
+  }
+  .swipe-card .card-body{
+    padding: 14px 16px;
+    flex-shrink: 0;
+    background: #fff;
+    border-top: 2px solid var(--ink);
+  }
+  .swipe-card .card-city{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 22px;
+    display:flex;
+    align-items:center;
+    gap: 8px;
+  }
+  .swipe-card .card-city img{ width:24px; height:17px; border-radius:2px; border:1px solid var(--line); }
+  .swipe-card .card-meta{
+    font-family:'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .swipe-stamp{
+    position: absolute;
+    top: 24px;
+    padding: 6px 14px;
+    border: 4px solid;
+    border-radius: 10px;
+    font-family:'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .swipe-stamp.like{ right: 20px; color: var(--petrol); border-color: var(--petrol); transform: rotate(-12deg); }
+  .swipe-stamp.pass{ left: 20px; color: var(--rose); border-color: var(--rose); transform: rotate(12deg); }
+
+  .swipe-buttons{
+    display:flex;
+    gap: 28px;
+    margin-top: 20px;
+  }
+  .swipe-btn{
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    border: 3px solid var(--ink);
+    background: #fff;
+    font-size: 26px;
+    cursor: pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .swipe-btn.pass{ color: var(--rose); border-color: var(--rose); }
+  .swipe-btn.like{ color: var(--petrol); border-color: var(--petrol); }
+  .swipe-btn:active{ transform: scale(0.92); }
+
+  #swipe-results-body{ max-width: 520px; width: 100%; }
+  #swipe-results-body h2{ font-family:'Fraunces', serif; font-size: 28px; margin: 0 0 10px; }
+  #swipe-results-body p{ color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+  .swipe-chip-list{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin: 16px 0 24px;
+  }
+  .swipe-chip{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .swipe-chip img{ width:18px; height:13px; border-radius:2px; }
+  .swipe-chip.match{ border-color: var(--rose); background: rgba(201,123,123,0.12); }
+  .swipe-share-box{
+    margin-top: 18px;
+    padding: 16px;
+    background: #fff;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+  }
+  .swipe-share-box textarea{
+    width: 100%;
+    height: 60px;
+    font-family:'Space Mono', monospace;
+    font-size: 11px;
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    padding: 8px;
+    resize: none;
+    margin-top: 8px;
+    color: var(--ink-soft);
+  }
+  .swipe-match-banner{
+    background: var(--honey);
+    color: var(--ink);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 18px;
+    font-family:'Fraunces', serif;
+    font-size: 20px;
+  }
+  @media (max-width: 640px){
+    #swipe-card-stack{ height: 56vh; }
+  }
+
   /* ---------- Destination photo gallery ---------- */
   .dest-photo-wrap{
     margin: 18px 22px 0;
@@ -1011,6 +1228,7 @@
     <button id="view-map-btn" class="active">Mapa</button>
     <button id="view-list-btn">Lista</button>
   </div>
+  <button class="swipe-launch-btn" id="open-swipe-mode">&#128153; Modo parejas</button>
 </div>
 
 <div class="filter-bar">
@@ -1202,6 +1420,32 @@
     <button class="compare-modal-close" id="compare-modal-close">&times;</button>
     <h2>Comparar destinos</h2>
     <div id="compare-modal-body"></div>
+  </div>
+</div>
+
+<div id="swipe-overlay">
+  <div class="swipe-header">
+    <button class="swipe-close" id="swipe-close">&times;</button>
+    <div class="swipe-progress" id="swipe-progress">&mdash;</div>
+  </div>
+
+  <div id="swipe-intro" class="swipe-screen">
+    <h2>&#128153; Modo parejas</h2>
+    <p id="swipe-intro-text">Deslizad cada destino: a la derecha si os apetece, a la izquierda si paso. Al final veréis en cuáles habéis coincidido.</p>
+    <p class="swipe-intro-note" id="swipe-intro-deck-note"></p>
+    <button class="filter-btn" id="swipe-start-btn">Empezar</button>
+  </div>
+
+  <div id="swipe-deck-screen" class="swipe-screen" style="display:none;">
+    <div id="swipe-card-stack"></div>
+    <div class="swipe-buttons">
+      <button class="swipe-btn pass" id="swipe-pass-btn" title="Paso">&times;</button>
+      <button class="swipe-btn like" id="swipe-like-btn" title="Me gusta">&#9825;</button>
+    </div>
+  </div>
+
+  <div id="swipe-results-screen" class="swipe-screen" style="display:none;">
+    <div id="swipe-results-body"></div>
   </div>
 </div>
 
@@ -2363,6 +2607,299 @@ document.querySelector('.dest-table th[data-sort="city"] .arrow').textContent = 
   const maxStr = dayOffsetToDate(SCHEDULE_SPAN).toISOString().slice(0,10);
   dateInput.min = minStr; dateInput.max = maxStr;
   returnInput.min = minStr; returnInput.max = maxStr;
+})();
+
+// ================= Modo parejas (swipe) =================
+let swipeDeck = [];
+let swipeIndex = 0;
+let myLikes = [];
+let incomingPartner = null; // { date, range, minFlights, durSel, likes: [codes] }
+
+function parseSwipeHash(){
+  const h = window.location.hash;
+  if (h.indexOf('#swipe?') !== 0) return null;
+  const params = new URLSearchParams(h.slice(7));
+  const likesStr = params.get('likes') || '';
+  return {
+    date: params.get('d') || '',
+    range: params.get('r') || '7',
+    minFlights: params.get('mf') || '0',
+    durSel: params.get('du') || '0',
+    likes: likesStr ? likesStr.split(',').filter(Boolean) : []
+  };
+}
+
+function shuffleArray(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function buildSwipeDeck(){
+  let codes;
+  if (currentFilterMatches){
+    codes = Array.from(currentFilterMatches);
+  } else {
+    codes = DESTINATIONS.filter(function(d){ return d.code !== 'MAD'; }).map(function(d){ return d.code; });
+  }
+  return shuffleArray(codes);
+}
+
+function openSwipeMode(){
+  document.getElementById('swipe-overlay').classList.add('active');
+  document.getElementById('swipe-intro').style.display = 'flex';
+  document.getElementById('swipe-deck-screen').style.display = 'none';
+  document.getElementById('swipe-results-screen').style.display = 'none';
+
+  swipeDeck = buildSwipeDeck();
+  swipeIndex = 0;
+  myLikes = [];
+
+  const introText = document.getElementById('swipe-intro-text');
+  const note = document.getElementById('swipe-intro-deck-note');
+  if (incomingPartner){
+    introText.textContent = 'Tu pareja ya ha elegido sus favoritos entre estos mismos destinos. Deslizad los vuestros y al final veremos en cuáles coincidís.';
+  } else {
+    introText.textContent = 'Deslizad cada destino: a la derecha si os apetece, a la izquierda si paso. Al terminar podrás compartir tus elecciones con tu pareja para ver en qué coincidís.';
+  }
+  note.textContent = swipeDeck.length + ' destino' + (swipeDeck.length === 1 ? '' : 's') + ' para elegir' + (currentFilterMatches ? ' (según el filtro activo)' : '') + '.';
+}
+
+function closeSwipeMode(){
+  document.getElementById('swipe-overlay').classList.remove('active');
+}
+
+function updateSwipeProgress(){
+  document.getElementById('swipe-progress').textContent = Math.min(swipeIndex + 1, swipeDeck.length) + ' / ' + swipeDeck.length;
+}
+
+function renderSwipeCard(){
+  const stack = document.getElementById('swipe-card-stack');
+  stack.innerHTML = '';
+  if (swipeIndex >= swipeDeck.length){
+    showSwipeResults();
+    return;
+  }
+  updateSwipeProgress();
+
+  // render up to 2 cards for a light stacked effect (back one static, front one interactive)
+  const backCode = swipeDeck[swipeIndex + 1];
+  if (backCode){
+    const backD = DESTINATIONS.find(function(x){ return x.code === backCode; });
+    if (backD) stack.appendChild(makeSwipeCardEl(backD, true));
+  }
+  const code = swipeDeck[swipeIndex];
+  const d = DESTINATIONS.find(function(x){ return x.code === code; });
+  if (!d){ swipeIndex++; renderSwipeCard(); return; }
+  const cardEl = makeSwipeCardEl(d, false);
+  stack.appendChild(cardEl);
+  attachSwipeGestures(cardEl, d);
+  loadCardPhoto(cardEl, d);
+}
+
+function makeSwipeCardEl(d, isBack){
+  const el = document.createElement('div');
+  el.className = 'swipe-card';
+  if (isBack){ el.style.transform = 'scale(0.96) translateY(8px)'; el.style.opacity = '0.7'; }
+  const flag = d.cc ? '<img src="https://flagcdn.com/w40/' + d.cc + '.png" alt="">' : '';
+  el.innerHTML =
+    '<div class="card-photo" id="card-photo-' + d.code + '"></div>' +
+    '<div class="swipe-stamp like">Me gusta</div>' +
+    '<div class="swipe-stamp pass">Paso</div>' +
+    '<div class="card-body">' +
+      '<div class="card-city">' + flag + '<span>' + d.city + '</span></div>' +
+      '<div class="card-meta">' + d.country + ' &middot; ' + d.duration + '</div>' +
+    '</div>';
+  return el;
+}
+
+function loadCardPhoto(cardEl, d){
+  const photoEl = cardEl.querySelector('.card-photo');
+  if (!photoEl) return;
+  if (photoCache[d.wiki] && photoCache[d.wiki].images && photoCache[d.wiki].images.length){
+    photoEl.style.backgroundImage = 'url(' + photoCache[d.wiki].images[0] + ')';
+    return;
+  }
+  fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(d.wiki))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      const thumb = data && data.thumbnail && data.thumbnail.source;
+      if (thumb && document.getElementById('card-photo-' + d.code)){
+        document.getElementById('card-photo-' + d.code).style.backgroundImage = 'url(' + thumb + ')';
+      }
+    })
+    .catch(function(){});
+}
+
+function attachSwipeGestures(cardEl, d){
+  let startX = 0, startY = 0, dx = 0, dragging = false;
+  const likeStamp = cardEl.querySelector('.swipe-stamp.like');
+  const passStamp = cardEl.querySelector('.swipe-stamp.pass');
+
+  function onDown(x, y){
+    dragging = true; startX = x; startY = y; dx = 0;
+    cardEl.style.transition = 'none';
+    cardEl.style.cursor = 'grabbing';
+  }
+  function onMove(x, y){
+    if (!dragging) return;
+    dx = x - startX;
+    const rot = dx / 18;
+    cardEl.style.transform = 'translate(' + dx + 'px, 0) rotate(' + rot + 'deg)';
+    const t = Math.min(Math.abs(dx) / 100, 1);
+    if (dx > 0){ likeStamp.style.opacity = t; passStamp.style.opacity = 0; }
+    else { passStamp.style.opacity = t; likeStamp.style.opacity = 0; }
+  }
+  function onUp(){
+    if (!dragging) return;
+    dragging = false;
+    cardEl.style.transition = 'transform 0.3s ease';
+    cardEl.style.cursor = 'grab';
+    if (Math.abs(dx) > 90){
+      decideCard(dx > 0, cardEl);
+    } else {
+      cardEl.style.transform = '';
+      likeStamp.style.opacity = 0;
+      passStamp.style.opacity = 0;
+    }
+  }
+
+  cardEl.addEventListener('pointerdown', function(e){ onDown(e.clientX, e.clientY); });
+  cardEl.addEventListener('pointermove', function(e){ onMove(e.clientX, e.clientY); });
+  cardEl.addEventListener('pointerup', onUp);
+  cardEl.addEventListener('pointerleave', function(){ if (dragging) onUp(); });
+}
+
+function decideCard(liked, cardEl){
+  const code = swipeDeck[swipeIndex];
+  if (liked) myLikes.push(code);
+  if (cardEl){
+    cardEl.style.transition = 'transform 0.35s ease, opacity 0.35s ease';
+    cardEl.style.transform = 'translate(' + (liked ? 500 : -500) + 'px, -30px) rotate(' + (liked ? 20 : -20) + 'deg)';
+    cardEl.style.opacity = '0';
+  }
+  swipeIndex++;
+  setTimeout(renderSwipeCard, cardEl ? 260 : 0);
+}
+
+document.getElementById('swipe-pass-btn').addEventListener('click', function(){
+  const cardEl = document.querySelector('#swipe-card-stack .swipe-card:last-child');
+  decideCard(false, cardEl);
+});
+document.getElementById('swipe-like-btn').addEventListener('click', function(){
+  const cardEl = document.querySelector('#swipe-card-stack .swipe-card:last-child');
+  decideCard(true, cardEl);
+});
+
+function buildShareUrl(){
+  const dateVal = document.getElementById('trip-date').value;
+  const range = document.getElementById('trip-range').value;
+  const minFlights = document.getElementById('trip-minflights').value;
+  const durSel = document.getElementById('trip-duration').value;
+  const params = new URLSearchParams();
+  if (dateVal) params.set('d', dateVal);
+  params.set('r', range);
+  params.set('mf', minFlights);
+  params.set('du', durSel);
+  params.set('likes', myLikes.join(','));
+  const base = window.location.href.split('#')[0];
+  return base + '#swipe?' + params.toString();
+}
+
+function showSwipeResults(){
+  document.getElementById('swipe-deck-screen').style.display = 'none';
+  document.getElementById('swipe-results-screen').style.display = 'flex';
+  document.getElementById('swipe-progress').textContent = swipeDeck.length + ' / ' + swipeDeck.length;
+
+  const body = document.getElementById('swipe-results-body');
+  let html = '';
+
+  if (incomingPartner){
+    const matches = myLikes.filter(function(c){ return incomingPartner.likes.indexOf(c) >= 0; });
+    if (matches.length){
+      html += '<div class="swipe-match-banner">&#127881; ¡Sois compatibles en ' + matches.length + ' destino' + (matches.length===1?'':'s') + '!</div>';
+      html += '<div class="swipe-chip-list">' + matches.map(swipeChipHtml).join('') + '</div>';
+    } else {
+      html += '<div class="swipe-match-banner">Esta vez no habéis coincidido en ninguno &mdash; ¡probad con otro filtro de fechas!</div>';
+    }
+  }
+
+  html += '<h2>Tus favoritos</h2>';
+  if (myLikes.length){
+    html += '<div class="swipe-chip-list">' + myLikes.map(swipeChipHtml).join('') + '</div>';
+  } else {
+    html += '<p>No has marcado ningún "me gusta" esta vez.</p>';
+  }
+
+  if (!incomingPartner){
+    html += '<div class="swipe-share-box">' +
+      '<p style="margin:0;">Comparte este enlace con tu pareja para que elija entre los mismos destinos y veáis en cuáles coincidís:</p>' +
+      '<textarea readonly id="swipe-share-text"></textarea>' +
+      '<button class="filter-btn" id="swipe-share-btn" style="margin-top:10px;">Compartir</button>' +
+      '</div>';
+  }
+  html += '<button class="filter-btn ghost" id="swipe-restart-btn" style="margin-top:16px;">Volver a barajar</button>';
+
+  body.innerHTML = html;
+
+  if (!incomingPartner){
+    const shareUrl = buildShareUrl();
+    document.getElementById('swipe-share-text').value = shareUrl;
+    document.getElementById('swipe-share-btn').addEventListener('click', function(){
+      if (navigator.share){
+        navigator.share({ title: 'Preparando el viaje con la osita', text: 'Elige tus destinos favoritos y miramos en cuáles coincidimos', url: shareUrl }).catch(function(){});
+      } else {
+        const ta = document.getElementById('swipe-share-text');
+        ta.select();
+        try { document.execCommand('copy'); this.textContent = 'Copiado ✓'; } catch(e){}
+      }
+    });
+  }
+
+  document.getElementById('swipe-restart-btn').addEventListener('click', openSwipeMode);
+
+  Array.prototype.forEach.call(body.querySelectorAll('.swipe-chip'), function(chip){
+    chip.addEventListener('click', function(){
+      const code = chip.getAttribute('data-code');
+      const d = DESTINATIONS.find(function(x){ return x.code === code; });
+      if (d){ closeSwipeMode(); openPanel(d); }
+    });
+  });
+}
+
+function swipeChipHtml(code){
+  const d = DESTINATIONS.find(function(x){ return x.code === code; });
+  if (!d) return '';
+  const isMatch = incomingPartner && incomingPartner.likes.indexOf(code) >= 0 && myLikes.indexOf(code) >= 0;
+  const flag = d.cc ? '<img src="https://flagcdn.com/w40/' + d.cc + '.png" alt="">' : '';
+  return '<span class="swipe-chip' + (isMatch ? ' match' : '') + '" data-code="' + code + '">' + flag + d.city + '</span>';
+}
+
+document.getElementById('open-swipe-mode').addEventListener('click', function(){
+  incomingPartner = null;
+  openSwipeMode();
+});
+document.getElementById('swipe-close').addEventListener('click', closeSwipeMode);
+document.getElementById('swipe-start-btn').addEventListener('click', function(){
+  document.getElementById('swipe-intro').style.display = 'none';
+  document.getElementById('swipe-deck-screen').style.display = 'flex';
+  renderSwipeCard();
+});
+
+// Si se abre la página desde un enlace compartido por la pareja
+(function(){
+  const parsed = parseSwipeHash();
+  if (!parsed) return;
+  incomingPartner = parsed;
+  if (parsed.date) document.getElementById('trip-date').value = parsed.date;
+  document.getElementById('trip-range').value = parsed.range;
+  document.getElementById('trip-minflights').value = parsed.minFlights;
+  document.getElementById('trip-duration').value = parsed.durSel;
+  if (parsed.date || parsed.durSel !== '0') applyFilter();
+  openSwipeMode();
 })();
 
 // Search
